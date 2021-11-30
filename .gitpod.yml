@@ -22,7 +22,7 @@ tasks:
       echo 'init script' # runs during prebuild
       curl -s https://get.nextflow.io | bash
     command: |
-      export PATH=/workspace/Goatee:$PATH
+      export PATH=/workspace/Protein_blast_and_taxonomy:$PATH
       nextflow info
       unset JAVA_TOOL_OPTIONS
       echo 'Starting workspace !'
