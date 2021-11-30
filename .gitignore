@@ -1,0 +1,7 @@
+.nextflow
+nextflow
+.nextflow/*
+.nextflow.log
+.nextflow.pid
+work
+.nextflow.lo*

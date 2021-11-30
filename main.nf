@@ -31,8 +31,9 @@ log.info """\
 // Include modules
 //================================================================================
 
+include { DOWNLOAD } from './modules/download.nf'
 include { DIAMOND_BLAST } from './modules/diamond_blast.nf'
-
+include { MAKE_DB } from './modules/make_blast_db.nf'
 
 input_target_proteins = channel
 	.fromPath(params.proteins)
@@ -40,8 +41,9 @@ input_target_proteins = channel
   
 
 workflow {
-	MAKE_DB ()
-	DIAMOND_BLAST ( input_target_proteins )
+	DOWNLOAD ()
+	MAKE_DB ( DOWNLOAD.out.database )
+	DIAMOND_BLAST ( input_target_proteins , MAKE_DB.out.blast_database )
 }
 
 workflow.onComplete {
