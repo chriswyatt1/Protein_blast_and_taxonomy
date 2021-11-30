@@ -4,14 +4,14 @@ process DIAMOND_BLAST {
     //stageInMode 'copy'
     
     input:
-        path '*.fa'
-        path 'database'
+        path 'proteins.fa'
+        path 'db'
                
     output:
         path("results.tsv") , emit: blast_hits
 
     script:
     """
-    diamond blastp -in --db $database  --out results.tsv --threads $task.cpus --outfmt 6 qseqid  
+    diamond blastp --in $proteins.fa --db $db --out results.tsv --threads $task.cpus --outfmt 6 qseqid skingdoms
     """
 }

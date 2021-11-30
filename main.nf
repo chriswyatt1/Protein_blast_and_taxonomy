@@ -18,7 +18,7 @@ nextflow.enable.dsl = 2
  * given `params.genome` specify on the run command line `--genome /path/to/Duck_genome.fasta`.
  */
 
-params.proteins="example.proteins.fa"
+params.proteins="Human_olfactory.fasta.gz"
 params.outdir = "results"
 
 log.info """\
@@ -40,6 +40,7 @@ input_target_proteins = channel
   
 
 workflow {
+	MAKE_DB ()
 	DIAMOND_BLAST ( input_target_proteins )
 }
 
