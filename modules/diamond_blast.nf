@@ -1,17 +1,19 @@
 process DIAMOND_BLAST {
     label 'blast'
     publishDir "$params.outdir/Blast_results/"
-    //stageInMode 'copy'
+    stageInMode 'copy'
     
     input:
-        path 'proteins.fa'
-        path 'db'
+        path proteins
+        path ('nr.dmnd')
                
     output:
-        path("results.tsv") , emit: blast_hits
+        path("*_results.tsv") , emit: blast_hits
 
     script:
     """
-    diamond blastp --in $proteins.fa --db $db --out results.tsv --threads $task.cpus --outfmt 6 qseqid skingdoms
+    diamond blastp --sensitive --max-target-seqs 1 --query $proteins --db nr --out ${proteins}\_results.tsv --threads $task.cpus --outfmt 6 qseqid sseqid evalue sphylums staxids
+    rm nr.dmnd
+    rm $proteins
     """
 }

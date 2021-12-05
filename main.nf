@@ -19,7 +19,11 @@ nextflow.enable.dsl = 2
  */
 
 params.proteins="Human_olfactory.fasta.gz"
+params.predownloaded= false
 params.outdir = "results"
+params.names = false
+params.nodes = false
+params.level = "family"
 
 log.info """\
  ===================================
@@ -32,8 +36,9 @@ log.info """\
 //================================================================================
 
 include { DOWNLOAD } from './modules/download.nf'
-include { DIAMOND_BLAST } from './modules/diamond_blast.nf'
 include { MAKE_DB } from './modules/make_blast_db.nf'
+include { DIAMOND_BLAST } from './modules/diamond_blast.nf'
+include { PLOT_PIE } from './modules/plot_taxonomy_pie.nf'
 
 input_target_proteins = channel
 	.fromPath(params.proteins)
@@ -41,9 +46,27 @@ input_target_proteins = channel
   
 
 workflow {
-	DOWNLOAD ()
-	MAKE_DB ( DOWNLOAD.out.database )
-	DIAMOND_BLAST ( input_target_proteins , MAKE_DB.out.blast_database )
+	if ( !params.predownloaded ){
+		// If not predownloaded then wget all from NCBI.
+		println "Downloading a new nr database with taxonomy information\n"
+		DOWNLOAD ()
+		MAKE_DB ( DOWNLOAD.out.database , DOWNLOAD.out.accession2taxid , DOWNLOAD.out.tax_nodes , DOWNLOAD.out.tax_names )
+		DIAMOND_BLAST ( input_target_proteins , MAKE_DB.out.blast_database )
+		PLOT_PIE ( DOWNLOAD.out.tax_names , DOWNLOAD.out.tax_nodes , DIAMOND_BLAST.out.blast_hits , params.level  )
+	}
+	else{
+		input_database = channel
+			.fromPath(params.predownloaded)
+			.ifEmpty { error "Cannot find the blast database : ${params.predownloaded}" }
+		input_names = channel
+                        .fromPath(params.names)
+                        .ifEmpty { error "Cannot find the blast database : ${params.names}" }
+		input_nodes = channel
+                        .fromPath(params.nodes)
+                        .ifEmpty { error "Cannot find the blast database : ${params.nodes}" }
+		DIAMOND_BLAST ( input_target_proteins , input_database )
+		PLOT_PIE ( input_names , input_nodes , DIAMOND_BLAST.out.blast_hits , params.level  )
+	}
 }
 
 workflow.onComplete {
