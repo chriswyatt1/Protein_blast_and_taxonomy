@@ -8,6 +8,8 @@ docker pull buchfink/diamond:v2.0.13
 
 Then run as docker run -it --rm buchfink/diamond 
 
+Test on docker:
+docker run -it --entrypoint /bin/bash --volume $PWD/Human_olfactory.fasta:/Human_olfactory.fasta buchfink/diamond 
 
 Replicate error with singularity on UCL cluster :
 singularity exec /your/dir/Scratch/.singularity/pull/buchfink-diamond.img /bin/bash -c "diamond makedb --in nr.gz -d database"

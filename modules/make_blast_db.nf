@@ -1,6 +1,6 @@
 process MAKE_DB {
     label 'blastdb'
-    stageInMode 'copy'
+    //stageInMode 'copy'
     input:
         path nr_gz
         path prot_accession2taxid

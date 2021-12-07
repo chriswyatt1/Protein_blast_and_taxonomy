@@ -14,6 +14,6 @@ process PLOT_PIE {
 
     script:
     """
-	ncbi_txids_taxonomy.pl $nodes $names $blast_result $level
+	${workflow.projectDir}/bin/ncbi_txids_taxonomy.pl $nodes $names $blast_result $level
     """
 }

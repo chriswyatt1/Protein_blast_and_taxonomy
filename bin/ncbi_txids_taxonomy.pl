@@ -3,8 +3,6 @@
 use strict;
 use warnings;
 
-# Created 5.12.2021 by Chris Wyatt.
-
 die "Please specify (1) nodes.dmp (2) names.dmp (3) NCBI Ids (new line sep. Reads last column in file input) (4) Level to summarise (e.g. Family)\n" unless(@ARGV==4);
 
 
@@ -13,7 +11,7 @@ my $names = $ARGV[1];
 my $input = $ARGV[2];
 my $level = $ARGV[3];
 
-my $OUT_file="$input\_tax_hits.tsv";
+my $OUT_file="TAXONOMY_processed.tsv";
 
 #initiaite groups from conversion file.
 open(my $NODE_IN, "<", $nodes)   or die "Could not open $nodes \n";

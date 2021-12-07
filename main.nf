@@ -65,7 +65,7 @@ workflow {
                         .fromPath(params.nodes)
                         .ifEmpty { error "Cannot find the blast database : ${params.nodes}" }
 		DIAMOND_BLAST ( input_target_proteins , input_database )
-		PLOT_PIE ( input_names , input_nodes , DIAMOND_BLAST.out.blast_hits , params.level  )
+		PLOT_PIE ( input_nodes , input_names , DIAMOND_BLAST.out.blast_hits , params.level  )
 	}
 }
 
