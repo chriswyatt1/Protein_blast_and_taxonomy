@@ -13,3 +13,6 @@ docker run -it --entrypoint /bin/bash --volume $PWD/Human_olfactory.fasta:/Human
 
 Replicate error with singularity on UCL cluster :
 singularity exec /your/dir/Scratch/.singularity/pull/buchfink-diamond.img /bin/bash -c "diamond makedb --in nr.gz -d database"
+
+
+This pipeline uses trandecoder is you supply Trinity.fasta output, in order to get the likely coding regions of each gene. This uses TransDecoder Release v5.5.0. Make sure to cite the webpage : https://github.com/TransDecoder/TransDecoder (As it is not in a journal)

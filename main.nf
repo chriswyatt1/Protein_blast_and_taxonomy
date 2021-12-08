@@ -18,7 +18,8 @@ nextflow.enable.dsl = 2
  * given `params.genome` specify on the run command line `--genome /path/to/Duck_genome.fasta`.
  */
 
-params.proteins="Human_olfactory.fasta.gz"
+params.proteins= false
+params.nucleotide = false
 params.predownloaded= false
 params.outdir = "results"
 params.names = false
@@ -28,6 +29,7 @@ params.level = "family"
 log.info """\
  ===================================
  proteins                             : ${params.proteins}
+ nucleotides                          : ${params.nucleotide}
  out directory                        : ${params.outdir}
  """
 
@@ -39,13 +41,27 @@ include { DOWNLOAD } from './modules/download.nf'
 include { MAKE_DB } from './modules/make_blast_db.nf'
 include { DIAMOND_BLAST } from './modules/diamond_blast.nf'
 include { PLOT_PIE } from './modules/plot_taxonomy_pie.nf'
+include { T_DECODER } from './modules/transdecoder.nf'
 
-input_target_proteins = channel
-	.fromPath(params.proteins)
-	.ifEmpty { error "Cannot find the list of protein files: ${params.proteins}" }
-  
 
 workflow {
+	if ( params.proteins ){
+        	input_target_proteins = channel
+        	.fromPath(params.proteins)
+        	.ifEmpty { error "Cannot find the list of protein files: ${params.proteins}" }
+	}
+	else if( params.nucleotide ){
+		input_target_nucleotide = channel
+                .fromPath(params.nucleotide)
+                .ifEmpty { error "Cannot find the list of protein files: ${params.nucleotide}" }
+		T_DECODER ( input_target_nucleotide )
+		T_DECODER.out.protein.set{ input_target_proteins }
+	}
+	else{
+		println "You have not set the input protein or nucleotide option\n"
+	}
+
+
 	if ( !params.predownloaded ){
 		// If not predownloaded then wget all from NCBI.
 		println "Downloading a new nr database with taxonomy information\n"
