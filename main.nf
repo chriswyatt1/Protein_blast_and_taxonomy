@@ -25,6 +25,7 @@ params.outdir = "results"
 params.names = false
 params.nodes = false
 params.level = "family"
+params.sensitivity= "fast"
 
 log.info """\
  ===================================
@@ -68,7 +69,8 @@ workflow {
 		DOWNLOAD ()
 		MAKE_DB ( DOWNLOAD.out.database , DOWNLOAD.out.accession2taxid , DOWNLOAD.out.tax_nodes , DOWNLOAD.out.tax_names )
 		DIAMOND_BLAST ( input_target_proteins , MAKE_DB.out.blast_database )
-		PLOT_PIE ( DOWNLOAD.out.tax_names , DOWNLOAD.out.tax_nodes , DIAMOND_BLAST.out.blast_hits , params.level  )
+		PLOT_PIE ( DOWNLOAD.out.tax_names , DOWNLOAD.out.tax_nodes , DIAMOND_BLAST.out.blast_hits )
+		
 	}
 	else{
 		input_database = channel
@@ -81,7 +83,7 @@ workflow {
                         .fromPath(params.nodes)
                         .ifEmpty { error "Cannot find the blast database : ${params.nodes}" }
 		DIAMOND_BLAST ( input_target_proteins , input_database )
-		PLOT_PIE ( input_nodes , input_names , DIAMOND_BLAST.out.blast_hits , params.level  )
+		PLOT_PIE ( input_nodes , input_names , DIAMOND_BLAST.out.blast_hits )
 	}
 }
 
