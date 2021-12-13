@@ -52,7 +52,7 @@ my @array_family;
 my @array_genus;
 my @array_species;
 my @array_subspecies;
-
+my $line_c=0;
 my @array_res;
 
 while (my $line=<$INPUT_IN>){
@@ -65,44 +65,51 @@ while (my $line=<$INPUT_IN>){
 	my $parent_id=$id;
 	#Set result variable 
 	my $result;
+	my $hits_c=0;
+	if (exists $name_hash{$id}){
+		do {
+		
+			my $current_id=$parent_id;
+			my $current_fam=$node_hash_order{$current_id};
 
-	do {
-		my $current_id=$parent_id;
-		my $current_fam=$node_hash_order{$current_id};
+			if ( $current_fam eq "kingdom"){
+				push (@array_kingdom, "$name_hash{$current_id}");
+			}
+			elsif ($current_fam eq "phylum"){
+				push (@array_phylum, "$name_hash{$current_id}");
+			}
+			elsif ($current_fam eq "class"){
+				push (@array_class, "$name_hash{$current_id}");
+			}
+			elsif ($current_fam eq "order"){
+				push (@array_order, "$name_hash{$current_id}");
+			}
+			elsif ($current_fam eq "family"){
+				push (@array_family, "$name_hash{$current_id}");
+			}
+			elsif ($current_fam eq "genus"){
+				push (@array_genus, "$name_hash{$current_id}");
+			}
+			elsif ($current_fam eq "species"){
+				push (@array_species, "$name_hash{$current_id}");
+			}
+			elsif ($current_fam eq "subspecies"){
+				push (@array_subspecies, "$name_hash{$current_id}");
+			}
 
-		if ( $current_fam eq "kingdom"){
-			push (@array_kingdom, "$name_hash{$current_id}");
+			else{
+				#print "This is an error on line $line_c : $current_id $current_fam  with $node_hash_parent{$parent_id}\n";
+				#$parent_id = 1;
+				#Do nothing. Though could be a source of error to check in future.
+			}
+			$parent_id = $node_hash_parent{$parent_id};
 		}
-		elsif ($current_fam eq "phylum"){
-			push (@array_phylum, "$name_hash{$current_id}");
-		}
-		elsif ($current_fam eq "class"){
-			push (@array_class, "$name_hash{$current_id}");
-		}
-		elsif ($current_fam eq "order"){
-			push (@array_order, "$name_hash{$current_id}");
-		}
-		elsif ($current_fam eq "family"){
-			push (@array_family, "$name_hash{$current_id}");
-		}
-		elsif ($current_fam eq "genus"){
-			push (@array_genus, "$name_hash{$current_id}");
-		}
-		elsif ($current_fam eq "species"){
-			push (@array_species, "$name_hash{$current_id}");
-		}
-		elsif ($current_fam eq "subspecies"){
-			push (@array_subspecies, "$name_hash{$current_id}");
-		}
-
-		else{
-			#Do nothing. Though could be a source of error to check in future.
-		}
-
-		$parent_id = $node_hash_parent{$parent_id};
-
+		until($parent_id == 1);
+		$line_c++;
 	}
-	until($parent_id == 1);
+	else {
+		print "An entry does not have a hit in the names.dmp. Skipping line $line_c : $id\n";
+	}
 }
 
 #Merge layers
@@ -191,3 +198,4 @@ write.table(sort(table(data_subspecies), decreasing = T),\"$input\_subspecies\",
 print $out_Rcmds "dev.off()\n";
 
 `R --vanilla <ACTUAL_R_CODE> output.ofthis.test`;
+
