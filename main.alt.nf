@@ -73,17 +73,20 @@ workflow {
 		
 	}
 	else{
-		//input_database = channel
-		//	.fromPath(params.predownloaded)
-		//	.ifEmpty { error "Cannot find the blast database : ${params.predownloaded}" }
-		//input_names = channel
-                //        .fromPath(params.names)
-                //        .ifEmpty { error "Cannot find the blast database : ${params.names}" }
-		//input_nodes = channel
-                //        .fromPath(params.nodes)
-                //        .ifEmpty { error "Cannot find the blast database : ${params.nodes}" }
-		DIAMOND_BLAST ( input_target_proteins , params.predownloaded )
-		PLOT_PIE ( params.nodes , params.names , DIAMOND_BLAST.out.blast_hits )
+		input_database = channel
+			.fromPath(params.predownloaded)
+			.ifEmpty { error "Cannot find the blast database : ${params.predownloaded}" }
+			.first()	
+		input_names = channel
+                        .fromPath(params.names)
+                        .ifEmpty { error "Cannot find the blast database : ${params.names}" }
+			.first()
+		input_nodes = channel
+                        .fromPath(params.nodes)
+                        .ifEmpty { error "Cannot find the blast database : ${params.nodes}" }
+			.first()
+		DIAMOND_BLAST ( input_target_proteins , input_database )
+		PLOT_PIE ( input_nodes , input_names , DIAMOND_BLAST.out.blast_hits )
 	}
 }
 
