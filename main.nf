@@ -26,6 +26,7 @@ params.names = false
 params.nodes = false
 params.level = "family"
 params.sensitivity= "fast"
+params.format= "6"
 
 log.info """\
  ===================================
