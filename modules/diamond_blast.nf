@@ -12,7 +12,7 @@ process DIAMOND_BLAST {
 
     script:
     """
-    diamond blastp --$params.sensitivity --max-target-seqs 1 --query $proteins --db nr --out ${proteins}\_results.tsv --threads $task.cpus --outfmt ${params.format} qseqid sseqid evalue sphylums staxids
+    diamond blastp --$params.sensitivity --max-target-seqs ${params.numblasthits} --query ${proteins} --db nr --out ${proteins}\_results.tsv --threads $task.cpus --outfmt ${params.format} qseqid sseqid evalue sphylums staxids
     rm nr.dmnd
     rm $proteins
     """

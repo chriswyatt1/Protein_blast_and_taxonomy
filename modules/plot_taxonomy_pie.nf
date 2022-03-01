@@ -2,6 +2,8 @@ process PLOT_PIE {
     label 'perl_pie'
     publishDir "$params.outdir/Blast_results/"
     //stageInMode 'copy'
+
+    when: $params.format = "6"
     
     input:
 	path nodes

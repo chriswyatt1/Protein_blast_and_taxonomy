@@ -20,13 +20,15 @@ nextflow.enable.dsl = 2
 
 params.proteins= false
 params.nucleotide = false
-params.predownloaded= false
+params.predownloaded = false
+params.blasttype = "diamond"
 params.outdir = "results"
 params.names = false
 params.nodes = false
 params.level = "family"
-params.sensitivity= "fast"
-params.format= "6"
+params.sensitivity = "fast"
+params.format = "6"
+params.numblasthits = 1
 
 log.info """\
  ===================================
@@ -44,7 +46,8 @@ include { MAKE_DB } from './modules/make_blast_db.nf'
 include { DIAMOND_BLAST } from './modules/diamond_blast.nf'
 include { PLOT_PIE } from './modules/plot_taxonomy_pie.nf'
 include { T_DECODER } from './modules/transdecoder.nf'
-
+include { MAKE_NCBI_DB } from './modules/make_ncbi_blast_db.nf'
+include { NCBI_BLAST } from './modules/ncbi_blast.nf'
 
 workflow {
 	if ( params.proteins ){
@@ -67,24 +70,37 @@ workflow {
 	if ( !params.predownloaded ){
 		// If not predownloaded then wget all from NCBI.
 		println "Downloading a new nr database with taxonomy information\n"
-		DOWNLOAD ()
-		MAKE_DB ( DOWNLOAD.out.database , DOWNLOAD.out.accession2taxid , DOWNLOAD.out.tax_nodes , DOWNLOAD.out.tax_names )
-		DIAMOND_BLAST ( input_target_proteins , MAKE_DB.out.blast_database )
-		PLOT_PIE ( DOWNLOAD.out.tax_names , DOWNLOAD.out.tax_nodes , DIAMOND_BLAST.out.blast_hits )
+		
+		if (params.blasttype == 'ncbi'){
+			MAKE_NCBI_DB ()
+			NCBI_BLAST ( input_target_proteins , MAKE_NCBI_DB.out.blast_database )
+			
+		}
+		if (params.blasttype == 'diamond'){
+			DOWNLOAD ()
+			MAKE_DB ( DOWNLOAD.out.database , DOWNLOAD.out.accession2taxid , DOWNLOAD.out.tax_nodes , DOWNLOAD.out.tax_names )
+			DIAMOND_BLAST ( input_target_proteins , MAKE_DB.out.blast_database )
+			PLOT_PIE ( DOWNLOAD.out.tax_names , DOWNLOAD.out.tax_nodes , DIAMOND_BLAST.out.blast_hits )
+		}
 		
 	}
 	else{
-		//input_database = channel
-		//	.fromPath(params.predownloaded)
-		//	.ifEmpty { error "Cannot find the blast database : ${params.predownloaded}" }
-		//input_names = channel
-                //        .fromPath(params.names)
-                //        .ifEmpty { error "Cannot find the blast database : ${params.names}" }
-		//input_nodes = channel
-                //        .fromPath(params.nodes)
-                //        .ifEmpty { error "Cannot find the blast database : ${params.nodes}" }
-		DIAMOND_BLAST ( input_target_proteins , params.predownloaded )
-		PLOT_PIE ( params.nodes , params.names , DIAMOND_BLAST.out.blast_hits )
+		if (params.blasttype == 'diamond'){
+			input_database = channel
+			.fromPath(params.predownloaded)
+			.ifEmpty { error "Cannot find the blast database : ${params.predownloaded}" }
+			.first()	
+			input_names = channel
+                        .fromPath(params.names)
+                        .ifEmpty { error "Cannot find the blast database : ${params.names}" }
+			.first()
+			input_nodes = channel
+                        .fromPath(params.nodes)
+                        .ifEmpty { error "Cannot find the blast database : ${params.nodes}" }
+			.first()
+			DIAMOND_BLAST ( input_target_proteins , input_database )
+			PLOT_PIE ( input_nodes , input_names , DIAMOND_BLAST.out.blast_hits )
+		}
 	}
 }
 
