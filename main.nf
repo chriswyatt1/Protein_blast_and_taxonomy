@@ -27,7 +27,7 @@ params.names = false
 params.nodes = false
 params.level = "family"
 params.sensitivity = "fast"
-params.format = "6"
+params.blast_outformat = "5"
 params.numblasthits = 1
 
 log.info """\
@@ -48,6 +48,7 @@ include { PLOT_PIE } from './modules/plot_taxonomy_pie.nf'
 include { T_DECODER } from './modules/transdecoder.nf'
 include { MAKE_NCBI_DB } from './modules/make_ncbi_blast_db.nf'
 include { NCBI_BLAST } from './modules/ncbi_blast.nf'
+include { SPLIT_FASTA } from './modules/split_fasta.nf'
 
 workflow {
 	if ( params.proteins ){
@@ -73,7 +74,8 @@ workflow {
 		
 		if (params.blasttype == 'ncbi'){
 			MAKE_NCBI_DB ()
-			NCBI_BLAST ( input_target_proteins , MAKE_NCBI_DB.out.blast_database )
+			SPLIT_FASTA ( input_target_proteins )
+			NCBI_BLAST ( SPLIT_FASTA.out.split_seqs.flatten() , MAKE_NCBI_DB.out.blast_database )
 			
 		}
 		if (params.blasttype == 'diamond'){

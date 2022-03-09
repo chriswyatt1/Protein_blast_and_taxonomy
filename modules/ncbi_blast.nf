@@ -11,7 +11,7 @@ process NCBI_BLAST {
 
     script:
     """
-    blastp -query ${proteins} -db nr -out ${proteins}\_results.tsv -num_threads $task.cpus -outfmt 5
+    blastp -query ${proteins} -max_target_seqs 30 -db nr -out ${proteins}\_results.tsv -num_threads $task.cpus -outfmt ${params.blast_outformat}
     rm nr.*
     rm $proteins
     """
