@@ -2,6 +2,11 @@
 
 Nextflow pipeline to run diamond blast and retrieve family level names for each protein.
 
+# Pre-requisites
+
+You must be on a unix machine or cluster, with Nextflow installed (https://www.nextflow.io/docs/latest/getstarted.html). 
+Then you must have Docker installed on your machine (with a login), if using the Docker config, or singularity installed if on a SunGrid Engine cluster.  
+
 # Setting up
 
 First, if you have proteins (one per gene) alredy, you can run with the -protein flag. If you have nucleotide fasta IDs, you need to use the -nucleotide flag , which will find the unique proteins (longest per gene).
