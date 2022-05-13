@@ -5,7 +5,7 @@ Nextflow pipeline to run diamond blast and retrieve family level names for each 
 
 First, if you have proteins (one per gene) alredy, you can run with the -protein flag. If you have nucleotide fasta IDs, you need to use the -nucleotide flag , which will find the unique proteins (longest per gene).
 
-Next, you need to choose your environment profile. The two currently avialable are for a local Docker run, if local and must have docker installed on your machine (then use `-profile docker` in the script). OR, if you are running on a SunGrid Engine cluster, you can use the Myriad profile (which is a UCL custom config file for running on a specific sge cluster in UCL), use with `=profile myriad`.
+Next, you need to choose your environment profile. The two currently avialable are for a local Docker run, if local and must have docker installed on your machine (then use `-profile docker` in the script). OR, if you are running on a SunGrid Engine cluster, you can use the Myriad profile (which is a UCL custom config file for running on a specific sge cluster in UCL), use with `-profile myriad`.
 
 The final consideration is where you have the NCBI blast database. If you plan to run mutliple times its best to run this pipeline once, then move these large files somewhere on yourfile system and point to them in subsequent runs... Else this script will download and set up a blast database with every run, which is computationally expensive and a large time delay for each run (and will quickly fill up your system with multiple blast databases which can be huge (100s of GB)
 
