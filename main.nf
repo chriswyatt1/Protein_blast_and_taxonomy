@@ -21,6 +21,7 @@ nextflow.enable.dsl = 2
 params.proteins= false
 params.nucleotide = false
 params.predownloaded= false
+params.numhits = 1
 params.outdir = "results"
 params.names = false
 params.nodes = false
