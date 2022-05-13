@@ -4,15 +4,20 @@ Nextflow pipeline to run diamond blast and retrieve family level names for each 
 
 # Pre-requisites
 
-- You must be on a unix machine (mac, linux etc.) or cluster, with Nextflow installed (https://www.nextflow.io/docs/latest/getstarted.html). 
-- Then you must have Docker installed on your machine (https://docs.docker.com/get-docker/; then login), if using the Docker config, or singularity installed if on a SunGrid Engine cluster.
-- You must have at least 100GB of space to run this workflow, as the blast DB is this size.
+- You must be on a unix machine (mac, linux etc.) or cluster.
+- Have Nextflow installed (https://www.nextflow.io/docs/latest/getstarted.html). 
+- You must have at least 125GB of space to run this workflow, as the blast DB is this size. 
+- LOCAL (option): requires Docker (https://docs.docker.com/get-docker/; then login).
+- SUNGRID ENGINE (option): requires Singularity (https://sylabs.io/guides/3.0/user-guide/installation.html). Normally already on the HPC Sun Grid Engine clusters.
+- Git (optional) (https://github.com/git-guides/install-git). SO you can git clone the repo
 
 # Setting up
 
-First, if you have proteins (one per gene) alredy, you can run with the -protein flag. If you have nucleotide fasta IDs, you need to use the -nucleotide flag , which will find the unique proteins (longest per gene).
+First, you need to clone the repository from github `git clone https://github.com/chriswyatt1/Protein_blast_and_taxonomy.git`, if you have git installed, OR download the zip folder from `https://github.com/chriswyatt1/Protein_blast_and_taxonomy.git`, then unzip it `unzip Protein_blast_and_taxonomy-Myriad_UCL.zip` and `cd` into this directory. 
 
-Next, you need to choose your environment profile. The two currently avialable are for a local Docker run, if local and must have docker installed on your machine (then use `-profile docker` in the script). OR, if you are running on a SunGrid Engine cluster, you can use the Myriad profile (which is a UCL custom config file for running on a specific sge cluster in UCL), use with `-profile myriad`.
+Second, if you have proteins (one per gene) alredy, you can run with the -protein flag. If you have nucleotide fasta IDs, you need to use the -nucleotide flag , which will find the unique proteins (longest per gene).
+
+Third, you need to choose your environment profile. The two currently avialable are for a local Docker run, if local and must have docker installed on your machine (then use `-profile docker` in the script). OR, if you are running on a SunGrid Engine cluster, you can use the Myriad profile (which is a UCL custom config file for running on a specific sge cluster in UCL), use with `-profile myriad`.
 
 The final consideration is where you have the NCBI blast database. If you plan to run multiple times its best to run this pipeline once, then move these large files somewhere on yourfile system and point to them in subsequent runs (is around 100GB,,,,so be careful)... This script will download and set up a blast database with every run, which is computationally expensive and a large time delay for each run (and will quickly fill up your system with multiple blast databases which can be huge, 100s of GBs). For this reason,,, do not try this workflow with Gitpod (max 30GB).
 
