@@ -35,7 +35,22 @@ With the locations of these files set, you can then run the pipeline a second ti
 nextflow run main.nf -bg -resume -profile docker --nucleotide Example.fasta --predownloaded blast_database/nr.dmnd --names blast_database/names.dmp --nodes results/nodes.dmp
 ```
 
-By default the total number of hits per sequence is set to 1. You can change this with the flag `--numhits <NUMBER>`. 
+# All possible flags
+
+```
+params.proteins= false
+params.nucleotide = false
+params.predownloaded= false
+params.numhits = 1
+params.outdir = "results"
+params.names = false
+params.nodes = false
+params.level = "family"
+params.sensitivity= "fast"
+```
+To set any of these to custom values, use -- then the parameter name. e.g. `params.outdir = "results"`, you can use on the command line by adding this flag `--outdir "My_results_folder"`.
+
+By default the total number of blast hits per sequence is set to 1. You can change this with the flag `--numhits <NUMBER>`. 
 
 # Results
 
