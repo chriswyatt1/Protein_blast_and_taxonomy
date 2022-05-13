@@ -35,7 +35,11 @@ With the locations of these files set, you can then run the pipeline a second ti
 nextflow run main.nf -bg -resume -profile docker --nucleotide Example.fasta --predownloaded blast_database/nr.dmnd --names blast_database/names.dmp --nodes results/nodes.dmp
 ```
 
+By default the total number of hits per sequence is set to 1. You can change this with the flag `--numhits <NUMBER>`. 
 
+# Results
+
+Once completed, you should have a folder called `Results`, which contains the blast hits file in tab format, along with some PDF overviews of the taxonomy information of all the genes.
 
 
 # ADMIN Section
