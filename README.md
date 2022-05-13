@@ -4,8 +4,9 @@ Nextflow pipeline to run diamond blast and retrieve family level names for each 
 
 # Pre-requisites
 
-You must be on a unix machine or cluster, with Nextflow installed (https://www.nextflow.io/docs/latest/getstarted.html). 
-Then you must have Docker installed on your machine (with a login), if using the Docker config, or singularity installed if on a SunGrid Engine cluster.  
+- You must be on a unix machine (mac, linux etc.) or cluster, with Nextflow installed (https://www.nextflow.io/docs/latest/getstarted.html). 
+- Then you must have Docker installed on your machine (https://docs.docker.com/get-docker/; then login), if using the Docker config, or singularity installed if on a SunGrid Engine cluster.
+- You must have at least 100GB of space to run this workflow, as the blast DB is this size.
 
 # Setting up
 
