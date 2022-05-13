@@ -7,8 +7,8 @@ Nextflow pipeline to run diamond blast and retrieve family level names for each 
 - You must be on a unix machine (mac, linux etc.) or cluster.
 - Have Nextflow installed (https://www.nextflow.io/docs/latest/getstarted.html). 
 - You must have at least 125GB of space to run this workflow, as the blast DB is this size. 
-- LOCAL (option): requires Docker (https://docs.docker.com/get-docker/; then login).
-- SUNGRID ENGINE (option): requires Singularity (https://sylabs.io/guides/3.0/user-guide/installation.html). Normally already on the HPC Sun Grid Engine clusters.
+- LOCAL (option 1 or next option): requires Docker (https://docs.docker.com/get-docker/; then login).
+- SUNGRID ENGINE ( option2 or previous option): requires Singularity (https://sylabs.io/guides/3.0/user-guide/installation.html). Normally already on the HPC Sun Grid Engine clusters.
 - Git (optional) (https://github.com/git-guides/install-git). SO you can git clone the repo
 
 # Setting up
