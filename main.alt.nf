@@ -8,19 +8,10 @@
  * - Chris Wyatt <chris.wyatt@seqera.io>
  */
 
-/* 
- * enable modules 
- */
-nextflow.enable.dsl = 2
-
-/*
- * Default pipeline parameters (on test data). They can be overriden on the command line eg.
- * given `params.genome` specify on the run command line `--genome /path/to/Duck_genome.fasta`.
- */
-
 params.proteins= false
 params.nucleotide = false
 params.predownloaded= false
+params.numhits = 1
 params.outdir = "results"
 params.names = false
 params.nodes = false
