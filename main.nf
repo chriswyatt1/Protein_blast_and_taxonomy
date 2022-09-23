@@ -10,6 +10,7 @@
 
 params.proteins= false
 params.nucleotide = false
+params.nucl_type = "ensembl"
 params.predownloaded= false
 params.numhits = 1
 params.outdir = "results"

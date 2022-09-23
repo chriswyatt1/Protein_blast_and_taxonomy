@@ -9,7 +9,7 @@ process T_DECODER {
 
     script:
     """
-	get_fasta_largest_isoform.TrinityMS.pl $fasta_file
+	get_fasta_largest_isoform.TrinityMS.pl $fasta_file $params.nucl_type
 	TransDecoder.LongOrfs -t ${fasta_file}.largestIsoform --output_dir Output
 	cp Output/longest_orfs.pep ${fasta_file}.prot.fa
     """
