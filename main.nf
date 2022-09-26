@@ -39,14 +39,17 @@ include { T_DECODER } from './modules/transdecoder.nf'
 
 workflow {
 	if ( params.proteins ){
-        	input_target_proteins = channel
-        	.fromPath(params.proteins)
-        	.ifEmpty { error "Cannot find the list of protein files: ${params.proteins}" }
+	    	input_target_proteins = channel
+	    	.fromPath(params.proteins)
+	    	.splitCsv()
+    		.ifEmpty { error "Cannot find the list of protein files: ${params.proteins}" }
 	}
 	else if( params.nucleotide ){
 		input_target_nucleotide = channel
-                .fromPath(params.nucleotide)
-                .ifEmpty { error "Cannot find the list of protein files: ${params.nucleotide}" }
+	        .fromPath(params.nucleotide)
+		.splitCsv()
+		.ifEmpty { error "Cannot find the list of nucleotide files: ${params.nucleotide}" }
+		.view()
 		T_DECODER ( input_target_nucleotide )
 		T_DECODER.out.protein.set{ input_target_proteins }
 	}
