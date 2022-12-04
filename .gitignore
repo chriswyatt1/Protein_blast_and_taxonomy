@@ -7,3 +7,4 @@ work
 .nextflow.lo*
 trace*
 results/*
+Input_prot_gotits.txt
