@@ -1,12 +1,12 @@
 process DIAMOND_BLAST {
     label 'blast'
-    publishDir "$params.outdir/Blast_results/"
+    publishDir "$params.outdir/Blast_results/", mode:'copy'
     //stageInMode 'copy'
     
     input:
         path proteins
         path ('nr.dmnd')
-               
+
     output:
         path("*_results.tsv") , emit: blast_hits
 

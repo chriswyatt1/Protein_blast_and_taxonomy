@@ -1,21 +1,10 @@
 /*
  * Copyright (c) 2021
  */
- 
-
- /*
- * Authors:
- * - Chris Wyatt <chris.wyatt@seqera.io>
- */
-
-/* 
- * enable modules 
- */
-nextflow.enable.dsl = 2
 
 /*
- * Default pipeline parameters (on test data). They can be overriden on the command line eg.
- * given `params.genome` specify on the run command line `--genome /path/to/Duck_genome.fasta`.
+ * Authors:
+ * - Chris Wyatt <chris.wyatt@seqera.io>
  */
 
 params.proteins= false
@@ -25,14 +14,16 @@ params.outdir = "results"
 params.names = false
 params.nodes = false
 params.level = "family"
-params.sensitivity= "fast"
+params.sensitivity = "fast"
+params.horizontal = false
+params.xml = false
 
 log.info """\
- ===================================
- proteins                             : ${params.proteins}
- nucleotides                          : ${params.nucleotide}
- out directory                        : ${params.outdir}
- """
+===================================
+proteins                             : ${params.proteins}
+nucleotides                          : ${params.nucleotide}
+out directory                        : ${params.outdir}
+"""
 
 //================================================================================
 // Include modules
@@ -40,10 +31,11 @@ log.info """\
 
 include { DOWNLOAD } from './modules/download.nf'
 include { MAKE_DB } from './modules/make_blast_db.nf'
-include { DIAMOND_BLAST } from './modules/diamond_blast.nf'
 include { PLOT_PIE } from './modules/plot_taxonomy_pie.nf'
 include { T_DECODER } from './modules/transdecoder.nf'
-
+include { DIAMOND_BLAST } from './modules/diamond_blast.nf'
+include { DIAMOND_HORIZONTAL } from './modules/diamond_horizontal.nf'
+include { DIAMOND_XML } from './modules/diamond_xml.nf'
 
 workflow {
 	input_database = Channel.empty()
@@ -60,7 +52,7 @@ workflow {
 		DOWNLOAD.out.tax_nodes.first().set{ input_nodes }
 	}
 	else{
-	    input_database = channel
+		input_database = channel
 			.fromPath(params.predownloaded)
 			.ifEmpty { error "Cannot find the blast database : ${params.predownloaded}" }
 			.first()
@@ -77,9 +69,9 @@ workflow {
 	input_target_proteins = Channel.empty()
 
 	if ( params.proteins ){
-        	input_target_proteins = channel
-        	.fromPath(params.proteins)
-        	.ifEmpty { error "Cannot find the list of protein files: ${params.proteins}" }
+			input_target_proteins = channel
+			.fromPath(params.proteins)
+			.ifEmpty { error "Cannot find the list of protein files: ${params.proteins}" }
 	}
 	else if( params.nucleotide ){
 		input_target_nucleotide = channel
@@ -95,6 +87,14 @@ workflow {
 
 	DIAMOND_BLAST ( input_target_proteins , input_database )
 	PLOT_PIE ( input_nodes , input_names , DIAMOND_BLAST.out.blast_hits )
+
+	if ( params.horizontal ){
+		DIAMOND_HORIZONTAL ( input_target_proteins , input_database )
+	}
+
+	if ( params.xml ){
+		DIAMOND_XML ( input_target_proteins , input_database )
+	}
 }
 
 workflow.onComplete {
