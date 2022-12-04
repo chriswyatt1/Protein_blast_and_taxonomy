@@ -18,12 +18,19 @@ nextflow.enable.dsl = 2
  * given `params.genome` specify on the run command line `--genome /path/to/Duck_genome.fasta`.
  */
 
-params.proteins="Human_olfactory.fasta.gz"
+params.proteins= false
+params.nucleotide = false
+params.predownloaded= false
 params.outdir = "results"
+params.names = false
+params.nodes = false
+params.level = "family"
+params.sensitivity= "fast"
 
 log.info """\
  ===================================
  proteins                             : ${params.proteins}
+ nucleotides                          : ${params.nucleotide}
  out directory                        : ${params.outdir}
  """
 
@@ -32,18 +39,62 @@ log.info """\
 //================================================================================
 
 include { DOWNLOAD } from './modules/download.nf'
-include { DIAMOND_BLAST } from './modules/diamond_blast.nf'
 include { MAKE_DB } from './modules/make_blast_db.nf'
+include { DIAMOND_BLAST } from './modules/diamond_blast.nf'
+include { PLOT_PIE } from './modules/plot_taxonomy_pie.nf'
+include { T_DECODER } from './modules/transdecoder.nf'
 
-input_target_proteins = channel
-	.fromPath(params.proteins)
-	.ifEmpty { error "Cannot find the list of protein files: ${params.proteins}" }
-  
 
 workflow {
-	DOWNLOAD ()
-	MAKE_DB ( DOWNLOAD.out.database )
-	DIAMOND_BLAST ( input_target_proteins , MAKE_DB.out.blast_database )
+	input_database = Channel.empty()
+	input_names    = Channel.empty()
+	input_nodes    = Channel.empty()
+
+	if ( !params.predownloaded ){
+		// If not predownloaded then wget all from NCBI.
+		println "Downloading a new nr database with taxonomy information\n"
+		DOWNLOAD ()
+		MAKE_DB ( DOWNLOAD.out.database , DOWNLOAD.out.accession2taxid , DOWNLOAD.out.tax_nodes , DOWNLOAD.out.tax_names )
+		MAKE_DB.out.blast_database.first().set{ input_database }
+		DOWNLOAD.out.tax_names.first().set{ input_names }
+		DOWNLOAD.out.tax_nodes.first().set{ input_nodes }
+	}
+	else{
+	    input_database = channel
+			.fromPath(params.predownloaded)
+			.ifEmpty { error "Cannot find the blast database : ${params.predownloaded}" }
+			.first()
+		input_names = channel
+            .fromPath(params.names)
+            .ifEmpty { error "Cannot find the blast database : ${params.names}" }
+			.first()
+		input_nodes = channel
+            .fromPath(params.nodes)
+            .ifEmpty { error "Cannot find the blast database : ${params.nodes}" }
+            .first()
+	}
+
+	input_target_proteins = Channel.empty()
+
+	if ( params.proteins ){
+        	input_target_proteins = channel
+        	.fromPath(params.proteins)
+        	.ifEmpty { error "Cannot find the list of protein files: ${params.proteins}" }
+	}
+	else if( params.nucleotide ){
+		input_target_nucleotide = channel
+                .fromPath(params.nucleotide)
+                .ifEmpty { error "Cannot find the list of protein files: ${params.nucleotide}" }
+		T_DECODER ( input_target_nucleotide )
+		T_DECODER.out.protein.set{ input_target_proteins }
+	}
+	else{
+		println "You have not set the input protein or nucleotide option\n"
+	}
+
+
+	DIAMOND_BLAST ( input_target_proteins , input_database )
+	PLOT_PIE ( input_nodes , input_names , DIAMOND_BLAST.out.blast_hits )
 }
 
 workflow.onComplete {

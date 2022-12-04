@@ -4,14 +4,16 @@ process DIAMOND_BLAST {
     //stageInMode 'copy'
     
     input:
-        path 'proteins.fa'
-        path 'db'
+        path proteins
+        path ('nr.dmnd')
                
     output:
-        path("results.tsv") , emit: blast_hits
+        path("*_results.tsv") , emit: blast_hits
 
     script:
     """
-    diamond blastp --in $proteins.fa --db $db --out results.tsv --threads $task.cpus --outfmt 6 qseqid skingdoms
+    diamond blastp --$params.sensitivity --max-target-seqs $params.numhits --query $proteins --db nr --out ${proteins}\_results.tsv --threads $task.cpus --outfmt 6 qseqid sseqid stitle pident evalue sphylums staxids
+    #rm nr.dmnd
+    #rm $proteins
     """
 }

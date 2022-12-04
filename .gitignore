@@ -5,3 +5,6 @@ nextflow
 .nextflow.pid
 work
 .nextflow.lo*
+trace*
+results/*
+Input_prot_gotits.txt

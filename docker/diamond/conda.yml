@@ -1,0 +1,12 @@
+#   conda env create -f env.yml
+name: diamond_cw
+channels:
+  - conda-forge
+  - bioconda
+  - anaconda
+  - defaults
+  - genomedk
+dependencies:
+  - python=3.6
+  - blast=2.11.0
+  - diamond=2.0.13
