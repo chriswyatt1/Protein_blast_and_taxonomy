@@ -12,7 +12,7 @@ process DIAMOND_HORIZONTAL {
 
     script:
     """
-        diamond blastp --fast --top 10  -k0 --query $proteins --db nr --out ${proteins}\_horizresults.tsv --threads $task.cpus --outfmt 6 qseqid sseqid stitle pident evalue sphylums staxids sscinames
+        diamond blastp --fast --top 10 --query $proteins --db nr --out ${proteins}\_horizresults.tsv --threads $task.cpus --outfmt 6 qseqid sseqid stitle pident evalue sphylums staxids sscinames
         #rm nr.dmnd
         #rm $proteins
     """
