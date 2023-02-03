@@ -13,6 +13,8 @@ params.predownloaded= false
 params.outdir = "results"
 params.names = false
 params.nodes = false
+params.numhits = null
+params.tophits = null
 params.level = "family"
 params.sensitivity = "fast"
 params.horizontal = false
@@ -88,11 +90,12 @@ workflow {
 
 
 	DIAMOND_BLAST ( input_target_proteins , input_database )
+	
 	PLOT_PIE ( input_nodes , input_names , DIAMOND_BLAST.out.blast_hits )
 
-	if ( params.horizontal ){
-		DIAMOND_HORIZONTAL ( input_target_proteins , input_database )
-	}
+	//if ( params.horizontal ){
+	//	DIAMOND_HORIZONTAL ( input_target_proteins , input_database )
+	//}
 
 	if ( params.xml ){
 		DIAMOND_XML ( input_target_proteins , input_database )

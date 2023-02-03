@@ -1,5 +1,6 @@
 process T_DECODER {
     label 'transdecoder'
+    publishDir "$params.outdir/Prot/", mode:'copy', pattern: '*.prot.fa'
 
     input:
 	path fasta_file

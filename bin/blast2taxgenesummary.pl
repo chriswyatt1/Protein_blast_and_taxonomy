@@ -8,7 +8,7 @@ die "Please specify (1) Blast results\n" unless(@ARGV==1);
 
 my $input = $ARGV[0];
 
-my $OUT_file="Horizontal_assesment.tsv";
+my $OUT_file="$input\_summary.tsv";
 
 #initiaite groups from conversion file.
 open(my $INPUT_IN, "<", $input)   or die "Could not open $input \n";
