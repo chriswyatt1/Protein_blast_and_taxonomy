@@ -3,14 +3,15 @@ process T_DECODER {
     publishDir "$params.outdir/Prot/", mode:'copy', pattern: '*.prot.fa'
 
     input:
-	path fasta_file
-               
+        path fasta_file
+        val type
+
     output:
         path("${fasta_file}.prot.fa") , emit: protein
 
     script:
     """
-	get_fasta_largest_isoform.TrinityMS.pl $fasta_file $params.nucl_type
+	get_fasta_largest_isoform.TrinityMS.pl $fasta_file $type
 	TransDecoder.LongOrfs -t ${fasta_file}.largestIsoform --output_dir Output
 	cp Output/longest_orfs.pep ${fasta_file}.prot.fa
     """
