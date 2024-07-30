@@ -1,6 +1,6 @@
 process DOWNLOAD {
     label 'download'
-
+    container 'quay.io/ecoflowucl/ncbi_download:v16.1.2-arm64'
     output:
         path("nr.gz") , emit: database
         path("prot.accession2taxid.FULL") , emit: accession2taxid

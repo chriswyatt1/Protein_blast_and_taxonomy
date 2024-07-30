@@ -17,7 +17,7 @@ params.names = false
 params.nodes = false
 params.level = "family"
 params.sensitivity= "fast"
-params.nucl_type = "ensembl"
+params.nucl_type = "trinity"
 
 log.info """\
  ===================================
