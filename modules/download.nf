@@ -1,6 +1,6 @@
 process DOWNLOAD {
-    label 'process_low'
-    label 'process_long'
+    label 'download_nr'
+    time 24.h
     container 'quay.io/ecoflowucl/ncbi_download:v16.1.2-arm64'
     output:
         path("nr.gz") , emit: database
