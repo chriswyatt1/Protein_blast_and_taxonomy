@@ -4,9 +4,14 @@ use strict;
 use FindBin;
 use lib ("$FindBin::RealBin/PerlLib");
 use Getopt::Std;
+use Bio::SeqIO;
 
+# This script reads in a fasta file and produces the longest transcript for each gene (if present in ensembl, trinity or basic headers are present). 
+# This is to stop multiple isoforms of the same gene going through. 
+# If you wish all genes/isoforms to go through, use "basic"
+# It then prints out the longest isoform for each gene, or all genes. 
 
-die "Please specify (1)fasta file (2) nucl type (ensembl, trinity)\n" unless(@ARGV==2);
+die "Please specify (1)fasta file (2) nucl type (ensembl, trinity, basic)\n" unless(@ARGV==2);
 
 my $fastafile = $ARGV[0];
 my $nucl_type = $ARGV[1];
@@ -19,7 +24,6 @@ open(my $outhandle, ">", $outfile)   or die "Could not open $outfile \n";
 if ($nucl_type eq "trinity"){
 
 
-use Bio::SeqIO;
 my $seqio = Bio::SeqIO->new(-file => "$fastafile", '-format' => 'Fasta');
 my %fastadictionary=();
 my @headersplit=();
@@ -49,7 +53,7 @@ print "Now print new fasta with one main protein per gene.\n";
 
 foreach my $key ( sort keys %fastadictionary){
 	if ($fastadictionary{$key} eq "Sequenceunavailable"){
-
+		#Do nothing
 	}
 	else{
 		print $outhandle ">$key\n$fastadictionary{$key}\n";
@@ -61,7 +65,6 @@ foreach my $key ( sort keys %fastadictionary){
 
 if ($nucl_type eq "ensembl"){
 	
-use Bio::SeqIO;
 my $seqio = Bio::SeqIO->new(-file => "$fastafile", '-format' => 'Fasta');
 my %fastadictionary=();
 my @headersplit=();
@@ -87,20 +90,53 @@ while (my $seq = $seqio->next_seq){ ## selects one sequence at a time
 	
 }
 
-print "Now print new fasta with one main protein per gene.\n";
+#print "Now print new fasta with one main protein per gene.\n";
 
 foreach my $key ( sort keys %fastadictionary){
 	if ($fastadictionary{$key} eq "Sequenceunavailable"){
-
+		#Do nothing
 	}
 	else{
 		print $outhandle ">$key\n$fastadictionary{$key}\n";
-	}
-	
+	}	
 }
 
 }
 
+
+if ($nucl_type eq "basic"){
+
+my $seqio = Bio::SeqIO->new(-file => "$fastafile", '-format' => 'Fasta');
+my %fastadictionary=();
+my @headersplit=();
+while (my $seq = $seqio->next_seq){ ## selects one sequence at a time
+        ## set variables for THIS sequence
+        my $id = $seq->display_id;
+        my $string = $seq->seq;
+        my $len=length($string);
+        if ($fastadictionary{$id}){
+                my $len_old=length($fastadictionary{$id});
+                if ($len >= $len_old){
+                        $fastadictionary{$id}=$string;
+                }
+        }
+	else{
+             	$fastadictionary{$id}=$string;
+        }
+}
+
+print "Now print new fasta with one main protein per gene.\n";
+
+foreach my $key ( sort keys %fastadictionary){
+        if ($fastadictionary{$key} eq "Sequenceunavailable"){
+                #Do nothing
+        }
+        else{
+                print $outhandle ">$key\n$fastadictionary{$key}\n";
+        }
+}
+
+}
 
 print "Finished:  input lines, output lines\n";
 
