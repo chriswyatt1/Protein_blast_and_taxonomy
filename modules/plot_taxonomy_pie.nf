@@ -1,5 +1,6 @@
 process PLOT_PIE {
     label 'perl_pie'
+    container = 'chriswyatt/perl_r_e1071'
     publishDir "$params.outdir/Blast_results/", mode:'copy', pattern: '*top.tsv'
     publishDir "$params.outdir/Taxo_figure/", mode:'copy', pattern: '*.pdf'
     publishDir "$params.outdir/Taxo_summary/", mode:'copy', pattern: '*_summary.tsv'

@@ -1,6 +1,7 @@
 process MAKE_DB {
     label 'blastdb'
-    //stageInMode 'copy'
+    container = 'chriswyatt/diamond'
+
     input:
         path nr_gz
         path prot_accession2taxid

@@ -1,7 +1,7 @@
 process DIAMOND_XML {
     label 'blast'
+    container = 'chriswyatt/diamond'
     publishDir "$params.outdir/Blast_results/", mode:'copy'
-    //stageInMode 'copy'
     
     input:
         path proteins

@@ -1,11 +1,13 @@
 process DOWNLOAD {
-    label 'download'
-               
+    label 'download_nr'
+    time 24.h
+    container 'quay.io/ecoflowucl/ncbi_download:v16.1.2-arm64'
     output:
         path("nr.gz") , emit: database
-	path("prot.accession2taxid.FULL") , emit: accession2taxid
+        path("prot.accession2taxid.FULL") , emit: accession2taxid
         path("nodes.dmp") , emit: tax_nodes
         path("names.dmp") , emit: tax_names
+
     script:
     """
     wget ftp://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz
