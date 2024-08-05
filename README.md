@@ -40,6 +40,12 @@ With the locations of these files set, you can then run the pipeline a second ti
 nextflow run main.nf -bg -resume -profile docker --nucleotide Example.fasta --predownloaded blast_database/nr.dmnd --names blast_database/names.dmp --nodes results/nodes.dmp
 ```
 
+# Run with NCBI blastp
+
+Add flag `--blasttype ncbi`
+
+e.g. `nextflow run main.nf -bg -resume -profile docker --blasttype ncbi`
+
 # All possible flags
 
 ```
