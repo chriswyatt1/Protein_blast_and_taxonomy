@@ -5,7 +5,8 @@
 ### Breaking changes
 
 - **Nextflow 25.04 or newer is required.** The pipeline now passes `nextflow lint` and runs on Nextflow 26, where the strict syntax parser is the default (v1 failed to parse its config on Nextflow 26).
-- **The database is now NCBI's preformatted BLAST database (default `nr`) instead of `nr.gz`.** NCBI stopped updating the `nr.gz` FASTA file in February 2024, so v1 always downloaded a stale database. DIAMOND 2.2 searches BLAST databases directly, so the `MAKE_DB` step and the `prot.accession2taxid` download are gone. Choose another NCBI database with `--blast_db`.
+- **The pipeline no longer downloads a database by default.** Point to an existing DIAMOND database with `--predownloaded nr.dmnd --names names.dmp --nodes nodes.dmp` (recommended), or ask for the download explicitly with `--downloaddb_800GB`. With neither, it stops before running anything.
+- **`--downloaddb_800GB` downloads NCBI's preformatted BLAST database (default `nr`, ~393 GB download, ~755 GB on disk) instead of `nr.gz`.** NCBI stopped updating the `nr.gz` FASTA file in February 2024, so v1 always downloaded a stale database. DIAMOND 2.2 searches BLAST databases directly, so the `MAKE_DB` step and the `prot.accession2taxid` download are gone. Choose another NCBI database with `--blast_db`.
 - `--max_cpus`, `--max_memory` and `--max_time` now cap every step (using Nextflow's `resourceLimits`, which replaces the `check_max` function). The `myriad` and `cscluster` profiles raise the caps to keep their v1 resources.
 - All containers changed (see below). Profile configs no longer set containers; each module pins its own.
 
@@ -29,6 +30,8 @@
 ### Added
 
 - `-profile test`: a quick end-to-end run on the NCBI Swiss-Prot database.
+- `--predownloaded` accepts a `.dmnd` file, the folder containing `nr.dmnd`, or an NCBI BLAST database folder.
+- The README lists the size of each database option.
 - The downloaded database is published to `results/database/` (as hard links) so it is easy to reuse with `--predownloaded`.
 - The per-rank taxonomy count tables are published to `results/Taxo_summary/`.
 

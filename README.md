@@ -10,7 +10,7 @@ Version 2 brings the pipeline up to date with Nextflow 26 and current NCBI data.
 - Nextflow 25.04 or newer (https://www.nextflow.io/docs/latest/getstarted.html). Tested on Nextflow 26.04.
 - LOCAL: requires Docker (https://docs.docker.com/get-docker/). On Apple Silicon Macs the containers run under Docker's x86 emulation, which works but is slow for large searches.
 - SUN GRID ENGINE CLUSTER: requires Singularity or Apptainer. Normally already on the HPC Sun Grid Engine clusters.
-- Disk space for the database. The default NCBI `nr` database is currently ~393 GB to download (176 volumes) and ~755 GB once extracted, so you need **about 800 GB free** for the download step. Volumes are extracted one at a time, so you never need room for the archives and the extracted database at once. Smaller databases such as `swissprot` (~1 GB) need far less.
+- A protein database to search against, ideally an existing DIAMOND database (`.dmnd`). See [The database](#the-database) for the options and their sizes.
 - Git (optional) (https://github.com/git-guides/install-git). So you can git clone the repo.
 
 # Setting up
@@ -25,11 +25,71 @@ Second, if you have proteins (one per gene) already, you can run with the `--pro
 
 Third, you need to choose your environment profile. Use `-profile docker` for a local run with Docker, `-profile myriad` for UCL's Myriad cluster, `-profile cscluster` for the UCL CS cluster, or `-profile apptainer` for Apptainer.
 
-The final consideration is the blast database. By default the pipeline downloads the latest NCBI `nr` protein database together with the NCBI taxonomy, which takes a long time (up to a day depending on your internet speed). The database is saved into `results/database/` so you only need to do this once; see [Reusing the database](#reusing-the-database). Because of its size, do not try this workflow with Gitpod.
+The final consideration is the database, described next.
+
+# The database
+
+The pipeline never downloads a database unless you ask it to. You must either point it to an existing database with `--predownloaded`, or explicitly ask for the NCBI nr download with `--downloaddb_800GB`. If you give neither, it stops straight away and tells you the options.
+
+| Database | Size on disk | How to use it |
+|----------|--------------|---------------|
+| An existing DIAMOND database, e.g. a shared `nr.dmnd` (**recommended**) | ~350 GB for nr built from NCBI's last nr FASTA (Feb 2024). No download. | `--predownloaded /path/to/nr.dmnd` |
+| NCBI nr, downloaded by the pipeline in BLAST format | **~393 GB download, ~755 GB on disk: you need about 800 GB free** | `--downloaddb_800GB` |
+| NCBI Swiss-Prot, for testing | ~225 MB download, ~0.7 GB on disk | `-profile test` |
+| NCBI taxonomy (`names.dmp`, `nodes.dmp`), always needed | ~80 MB download, ~540 MB on disk | `--names` and `--nodes` |
+
+Sizes are as of October 2026. NCBI nr roughly doubles every two years, so expect these to grow.
+
+## Option 1 (default): use an existing database
+
+Point `--predownloaded` at a DIAMOND database (`.dmnd`, or the folder containing `nr.dmnd`), and give the NCBI taxonomy files with `--names` and `--nodes`:
+
+```
+nextflow run main.nf -profile docker --proteins my_proteins.fa --predownloaded /shared/databases/nr.dmnd --names /shared/databases/names.dmp --nodes /shared/databases/nodes.dmp
+```
+
+Any `.dmnd` built with taxonomy works, including the `nr.dmnd` made by version 1 of this pipeline. On a cluster, the database just needs to be readable from the compute nodes; the containers mount it automatically, so a shared lab database works well.
+
+If you don't have the taxonomy files, download them (~80 MB):
+
+```
+wget https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdmp.zip
+unzip taxdmp.zip names.dmp nodes.dmp
+```
+
+`--predownloaded` also accepts an NCBI BLAST-format database folder, such as one downloaded by Option 2.
+
+## Option 2: download NCBI nr (~800 GB)
+
+Only if you have no database, add `--downloaddb_800GB`. The pipeline then downloads the latest NCBI `nr` database and the NCBI taxonomy:
+
+- It is ~393 GB to download (176 volumes) and ~755 GB once extracted, so you need **about 800 GB free**. Volumes are extracted one at a time, so you never need room for the archives and the extracted database at once.
+- It can take up to a day, depending on your internet speed.
+- Do not try this with Gitpod.
+
+NCBI no longer publishes an up-to-date nr FASTA (the last one is from February 2024), only the BLAST-format database. So that is what the pipeline downloads, and DIAMOND searches it directly without converting it to a `.dmnd`.
+
+To download a different NCBI protein database, add its name with `--blast_db`, for example `--downloaddb_800GB --blast_db swissprot` (see https://ftp.ncbi.nlm.nih.gov/blast/db/ for the list). Smaller databases need far less space than nr.
+
+The downloaded database is saved in `results/database/`:
+
+```
+results/database/blastdb/    the NCBI BLAST database (nr.*)
+results/database/names.dmp   NCBI taxonomy names
+results/database/nodes.dmp   NCBI taxonomy nodes
+```
+
+These are hard links to the files in the `work` directory, so they take no extra space. Move the `database` folder somewhere permanent (e.g. `blast_database`), then use it with Option 1 on later runs, so you never download it twice:
+
+```
+nextflow run main.nf -profile docker --proteins my_proteins.fa --predownloaded blast_database/blastdb --names blast_database/names.dmp --nodes blast_database/nodes.dmp
+```
+
+If you used `--blast_db` for the download, pass the same `--blast_db` again. If the hard links could not be made (for example when `work` and `results` are on different file systems), Nextflow prints a warning and you can find the same files in the `work` directory of the `DOWNLOAD` task instead.
 
 # Test the pipeline
 
-Before a big run, check everything works on your system with the built-in test. It downloads the small NCBI Swiss-Prot database (~225 MB) instead of nr and runs every step on `Example.fasta`. It takes a few minutes:
+Before a big run, check everything works on your system with the built-in test. It downloads the small NCBI Swiss-Prot database (~225 MB, not nr) and runs every step on `Example.fasta`. It takes a few minutes:
 
 ```
 nextflow run main.nf -profile test,docker
@@ -41,40 +101,12 @@ Results are written to `results_test/`.
 
 The basic command to run this workflow is the following:
 ```
-nextflow run main.nf -bg -resume -profile docker --nucleotide Example.fasta --nucl_type basic
+nextflow run main.nf -bg -resume -profile docker --nucleotide Example.fasta --nucl_type basic --predownloaded /path/to/nr.dmnd --names /path/to/names.dmp --nodes /path/to/nodes.dmp
 ```
 
-This will run the whole pipeline on the (`--nucleotide`) file `Example.fasta`, using the docker profile, so you must have docker installed. `-bg` allows Nextflow to run in the background, so you can continue in the same terminal and `-resume` allows Nextflow to continue from the last working step in the pipeline.
+This will run the whole pipeline on the (`--nucleotide`) file `Example.fasta` against your existing `nr.dmnd`, using the docker profile, so you must have docker installed. `-bg` allows Nextflow to run in the background, so you can continue in the same terminal and `-resume` allows Nextflow to continue from the last working step in the pipeline.
 
-WARNING: The nr download could take up to a day depending on your internet speed etc. So it is best to just leave it running in the background, while you do other things. If it takes longer, there may be an issue. Please create a new issue and let me know.
-
-To search a different NCBI protein database, give its name with `--blast_db`, for example `--blast_db swissprot` or `--blast_db refseq_protein` (see https://ftp.ncbi.nlm.nih.gov/blast/db/ for the list).
-
-# Reusing the database
-
-Once you have run the pipeline once, the downloaded database is in `results/database/`:
-
-```
-results/database/blastdb/    the NCBI BLAST database (nr.*)
-results/database/names.dmp   NCBI taxonomy names
-results/database/nodes.dmp   NCBI taxonomy nodes
-```
-
-These are hard links to the files in the `work` directory, so they take no extra space. Move the `database` folder somewhere permanent (e.g. `blast_database`), then point to it on later runs to skip the download:
-
-```
-nextflow run main.nf -bg -resume -profile docker --nucleotide Example.fasta --nucl_type basic --predownloaded blast_database/blastdb --names blast_database/names.dmp --nodes blast_database/nodes.dmp
-```
-
-If you used `--blast_db` to download a different database, pass the same `--blast_db` again.
-
-If the hard links could not be made (for example when `work` and `results` are on different file systems), Nextflow prints a warning and you can find the same files in the `work` directory of the `DOWNLOAD` task instead.
-
-`--predownloaded` also accepts a diamond database file (`.dmnd`), such as the `nr.dmnd` made by version 1 of this pipeline:
-
-```
-nextflow run main.nf -profile docker --proteins my_proteins.fa --predownloaded blast_database/nr.dmnd --names blast_database/names.dmp --nodes blast_database/nodes.dmp
-```
+On a Sun Grid Engine cluster, swap `-profile docker` for your cluster profile, e.g. `-profile myriad`.
 
 # All possible flags
 
@@ -83,8 +115,9 @@ nextflow run main.nf -profile docker --proteins my_proteins.fa --predownloaded b
 | `--proteins` | | Protein fasta file(s) to search. |
 | `--nucleotide` | | Nucleotide transcript fasta file(s), translated with TransDecoder. |
 | `--nucl_type` | `trinity` | Header format of `--nucleotide` files: `trinity`, `ensembl` or `basic`. |
-| `--blast_db` | `nr` | NCBI BLAST protein database to download (or the name of the database in `--predownloaded`). |
-| `--predownloaded` | | An existing database: a BLAST database directory or a diamond `.dmnd` file. |
+| `--predownloaded` | | An existing database: a DIAMOND `.dmnd` file (or the folder containing `nr.dmnd`), or an NCBI BLAST database folder. |
+| `--downloaddb_800GB` | | Download the NCBI nr database instead (~393 GB download, ~755 GB on disk). Off unless you add it. |
+| `--blast_db` | `nr` | Which NCBI database `--downloaddb_800GB` downloads, or the database name inside a `--predownloaded` folder. |
 | `--names` | | `names.dmp` taxonomy file (needed with `--predownloaded`). |
 | `--nodes` | | `nodes.dmp` taxonomy file (needed with `--predownloaded`). |
 | `--numhits` | `1` | Number of blast hits to keep per sequence (diamond `--max-target-seqs`). |
@@ -105,7 +138,7 @@ Once completed, you should have a folder called `results`, which contains:
 - `Taxo_figure/`: a PDF of pie charts summarising the taxonomy of the best hits at each rank (kingdom to subspecies).
 - `Taxo_summary/`: the counts behind each pie chart (`*_top.tsv_<rank>`), plus a per-gene summary of the phyla hit (`*_summary.tsv`).
 - `Prot/`: the proteins predicted by TransDecoder (only with `--nucleotide`).
-- `database/`: the downloaded database (only when not using `--predownloaded`).
+- `database/`: the downloaded database (only with `--downloaddb_800GB`).
 
 
 # Software

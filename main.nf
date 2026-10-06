@@ -13,6 +13,7 @@ params.nucleotide = false
 params.nucl_type = "trinity"
 params.blast_db = "nr"
 params.predownloaded= false
+params.downloaddb_800GB = false
 params.names = false
 params.nodes = false
 params.numhits = 1
@@ -38,9 +39,23 @@ workflow {
 	 ===================================
 	 proteins                             : ${params.proteins}
 	 nucleotides                          : ${params.nucleotide}
-	 database                             : ${params.predownloaded ?: "NCBI ${params.blast_db} (download)"}
+	 database                             : ${params.predownloaded ?: (params.downloaddb_800GB ? "download NCBI ${params.blast_db}" : "none given")}
 	 out directory                        : ${params.outdir}
 	 """.stripIndent()
+
+	// Check the database options first, so nothing runs (or downloads) by accident
+	if ( params.predownloaded && params.downloaddb_800GB ){
+		error "Use either --predownloaded (an existing database) or --downloaddb_800GB (download a new one), not both"
+	}
+	if ( !params.predownloaded && !params.downloaddb_800GB ){
+		error "No database given. Either:\n" +
+			"  - point to an existing database: --predownloaded nr.dmnd --names names.dmp --nodes nodes.dmp\n" +
+			"  - or download the NCBI nr database (~393 GB download, ~755 GB on disk) with --downloaddb_800GB\n" +
+			"See the README for details."
+	}
+	if ( params.predownloaded && ( !params.names || !params.nodes ) ){
+		error "--predownloaded also needs the taxonomy files: --names names.dmp --nodes nodes.dmp"
+	}
 
 	def input_target_proteins
 	if ( params.proteins ){
@@ -58,21 +73,18 @@ workflow {
 	def input_database
 	def input_nodes
 	def input_names
-	if ( !params.predownloaded ){
-		// If not predownloaded then download the BLAST database and taxonomy from NCBI.
+	if ( params.predownloaded ){
+		input_database = channel.value( file(params.predownloaded, checkIfExists: true) )
+		input_nodes = channel.value( file(params.nodes, checkIfExists: true) )
+		input_names = channel.value( file(params.names, checkIfExists: true) )
+	}
+	else{
+		// Only with --downloaddb_800GB: download the BLAST database and taxonomy from NCBI.
 		log.info "Downloading the NCBI ${params.blast_db} database with taxonomy information\n"
 		DOWNLOAD ()
 		input_database = DOWNLOAD.out.database
 		input_nodes = DOWNLOAD.out.tax_nodes
 		input_names = DOWNLOAD.out.tax_names
-	}
-	else{
-		if ( !params.names || !params.nodes ){
-			error "--predownloaded also needs the taxonomy files: --names names.dmp --nodes nodes.dmp"
-		}
-		input_database = channel.value( file(params.predownloaded, checkIfExists: true) )
-		input_nodes = channel.value( file(params.nodes, checkIfExists: true) )
-		input_names = channel.value( file(params.names, checkIfExists: true) )
 	}
 
 	DIAMOND_BLAST ( input_target_proteins , input_database , input_nodes , input_names )
