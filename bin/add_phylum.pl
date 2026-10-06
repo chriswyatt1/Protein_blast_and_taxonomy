@@ -3,8 +3,9 @@
 use strict;
 use warnings;
 
-#Adds the phylum of each hit (like diamond's sphylums) as the second to last column of NCBI blast output,
-#so it matches the diamond output used by the rest of the pipeline.
+#Adds the phylum of each hit (like diamond's sphylums) as the sixth column of NCBI blast output
+#(qseqid sseqid stitle pident evalue qcovhsp staxids), so it matches the diamond output used by the
+#rest of the pipeline: qseqid sseqid stitle pident evalue sphylums qcovhsp staxids.
 die "Please specify (1) nodes.dmp (2) names.dmp (3) Blast hits (tab format, taxids in the last column)\n" unless(@ARGV==3);
 
 my $nodes = $ARGV[0];
@@ -40,7 +41,7 @@ while (my $line=<$NAME_IN>){
 while (my $line=<$INPUT_IN>){
 	chomp $line;
 	my @split= split("\t", $line, -1);
-	my $taxids= pop @split;
+	my $taxids= $split[-1];
 
 	#Walk up from each taxid (several are separated by ";") to its phylum
 	my @phyla;
@@ -58,5 +59,6 @@ while (my $line=<$INPUT_IN>){
 	}
 	my $phylum = @phyla ? join("\;", @phyla) : "N/A";
 
-	print join("\t", @split, $phylum, $taxids), "\n";
+	splice(@split, 5, 0, $phylum);
+	print join("\t", @split), "\n";
 }

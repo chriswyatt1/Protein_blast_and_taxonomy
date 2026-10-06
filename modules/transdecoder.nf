@@ -9,6 +9,7 @@ process T_DECODER {
 
     output:
         path("${fasta_file}.prot.fa") , emit: protein
+        tuple val("${task.process}"), val('transdecoder'), eval("TransDecoder.LongOrfs --version | sed 's/^TransDecoder.LongOrfs //'"), emit: versions_transdecoder, topic: versions
 
     script:
     """
