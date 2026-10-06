@@ -20,6 +20,7 @@ params.nodes = false
 params.numhits = 1
 params.tophits = false
 params.sensitivity= "fast"
+params.expected_taxon = false
 params.level = "family"
 params.outdir = "results"
 
@@ -172,6 +173,7 @@ workflow {
 		"<dt>Command</dt><dd><code>${escapeHtml(workflow.commandLine)}</code></dd>",
 		"<dt>Input</dt><dd>${escapeHtml(params.proteins ?: params.nucleotide)}</dd>",
 		"<dt>Search tool</dt><dd>${search_tool} (${search_settings})</dd>",
+		"<dt>Expected taxon</dt><dd>${escapeHtml(params.expected_taxon ?: "not set (--expected_taxon)")}</dd>",
 		"<dt>Database</dt><dd>${escapeHtml(params.predownloaded ?: "NCBI ${blast_db}, downloaded by this run (saved in ${params.outdir}/database/)")}</dd>",
 		"</dl>"
 	].join("\n")

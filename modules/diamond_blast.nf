@@ -32,7 +32,7 @@ process DIAMOND_BLAST {
         db_args="--db \$db_path --taxdump taxdump"
     fi
 
-    diamond blastp --${params.sensitivity} ${hits} --query ${proteins} \$db_args --out ${proteins}_results.tsv --threads ${task.cpus} --outfmt 6 qseqid sseqid stitle pident evalue sphylums staxids
+    diamond blastp --${params.sensitivity} ${hits} --query ${proteins} \$db_args --out ${proteins}_results.tsv --threads ${task.cpus} --outfmt 6 qseqid sseqid stitle pident evalue sphylums qcovhsp staxids
 
     # For the report
     database_info.sh diamond ${database} \$db_path taxdump/nodes.dmp

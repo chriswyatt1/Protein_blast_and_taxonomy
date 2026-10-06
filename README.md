@@ -126,6 +126,12 @@ This will run the whole pipeline on the (`--nucleotide`) file `Example.fasta` ag
 
 On a Sun Grid Engine cluster, swap `-profile docker` for your cluster profile, e.g. `-profile myriad`.
 
+## Contamination check
+
+Add `--expected_taxon` with the taxon you sequenced, as an NCBI scientific name or taxid (e.g. `--expected_taxon Insecta`, or `--expected_taxon 50557`). The report then shows how many top hits are within that taxon, and groups those outside it by domain and phylum, so bacterial or fungal contamination stands out. The top hits outside it are listed in `Taxo_summary/*_outside_expected_taxon.tsv`.
+
+Pick a broad enough taxon (e.g. the class or order): genes whose closest relative in the database is outside your taxon will also show up as outside. For example, honeybee genes searched against Swiss-Prot often hit human or mouse, because Swiss-Prot has few bee proteins.
+
 # All possible flags
 
 | Flag | Default | Description |
@@ -142,6 +148,7 @@ On a Sun Grid Engine cluster, swap `-profile docker` for your cluster profile, e
 | `--numhits` | `1` | Number of blast hits to keep per sequence (`--max-target-seqs` / `-max_target_seqs`). |
 | `--tophits` | | Diamond only. Instead of `--numhits`, keep all hits within this percentage of the best hit's score (diamond `--top`). |
 | `--sensitivity` | `fast` | Diamond only. Sensitivity mode, e.g. `fast`, `sensitive`, `more-sensitive`, `ultra-sensitive`. |
+| `--expected_taxon` | | The taxon you sequenced (NCBI name or taxid), for the [contamination check](#contamination-check). |
 | `--outdir` | `results` | Output folder. |
 | `--max_cpus` | `4` | Most CPUs any single step may use. |
 | `--max_memory` | `32.GB` | Most memory any single step may use. Lower this if your machine has less memory, e.g. `--max_memory 12.GB`. |
@@ -156,13 +163,14 @@ Once completed, you should have a folder called `results`, which contains:
 - `report/Protein_blast_and_taxonomy_multiqc_report.html`: **start here.** A report (made with [MultiQC](https://multiqc.info)) of the whole run:
   - run information: pipeline and Nextflow versions, the command, the search tool and its settings, and the database;
   - the database: its location, type, size and date, and the NCBI taxonomy files used;
-  - a search summary for each input file: sequences searched, how many found a hit, how many top hits are ≥95% identical (usually the same or a very closely related species), the median identity, and the number of phyla, genera and species hit;
-  - interactive bar charts of the identity of the top hits (including sequences with no hit), and of the phylum and genus of the top hits;
+  - a search summary for each input file: sequences searched, how many found a hit, how many top hits are ≥95% identical (usually the same or a very closely related species) and how many of those also cover ≥90% of the sequence, the median identity and coverage, the number of phyla, genera and species hit, and (with `--expected_taxon`) how many top hits are outside the expected taxon;
+  - interactive bar charts of the identity and the query coverage of the top hits (including sequences with no hit), and of the phylum and genus of the top hits;
+  - with `--expected_taxon`, a chart of the top hits within and outside the expected taxon;
   - the taxonomy pie chart figure;
   - the versions of the main software used (DIAMOND or BLAST+, TransDecoder, R, Nextflow).
-- `Blast_results/`: the blast hits for each input file in tab format (`*_results.tsv`, columns: query, subject, subject title, percent identity, e-value, subject phylum, subject taxonomy id) and the best hit per query (`*_top.tsv`).
+- `Blast_results/`: the blast hits for each input file in tab format (`*_results.tsv`, columns: query, subject, subject title, percent identity, e-value, subject phylum, query coverage (%), subject taxonomy id) and the best hit per query (`*_top.tsv`).
 - `Taxo_figure/`: pie charts summarising the taxonomy of the best hits at each rank (kingdom to subspecies), as a PDF and a PNG.
-- `Taxo_summary/`: the counts behind each pie chart (`*_top.tsv_<rank>`, columns: taxon, count), plus a per-gene summary of the phyla hit (`*_summary.tsv`).
+- `Taxo_summary/`: the counts behind each pie chart (`*_top.tsv_<rank>`, columns: taxon, count), plus a per-gene summary of the phyla hit (`*_summary.tsv`) and, with `--expected_taxon`, the top hits outside the expected taxon (`*_outside_expected_taxon.tsv`).
 - `Prot/`: the proteins predicted by TransDecoder (only with `--nucleotide`, for diamond and blastp).
 - `Nucl/`: the longest transcript per gene that was searched (only with `--search_tool blastn`).
 - `database/`: the downloaded database (only with `--downloaddb_800GB`).

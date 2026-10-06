@@ -21,9 +21,9 @@ process NCBI_BLAST {
     # BLASTDB lets blast find the taxonomy files (taxdb.*) shipped with the database
     export BLASTDB=\$PWD/${database}
 
-    ${program} -query ${query} -db ${database}/${db_name} -out blast_hits.tsv -num_threads ${task.cpus} -max_target_seqs ${params.numhits} -outfmt "6 qseqid sseqid stitle pident evalue staxids"
+    ${program} -query ${query} -db ${database}/${db_name} -out blast_hits.tsv -num_threads ${task.cpus} -max_target_seqs ${params.numhits} -outfmt "6 qseqid sseqid stitle pident evalue qcovhsp staxids"
 
-    # Add the phylum column, so the output matches diamond's (qseqid sseqid stitle pident evalue sphylums staxids)
+    # Add the phylum column, so the output matches diamond's (qseqid sseqid stitle pident evalue sphylums qcovhsp staxids)
     add_phylum.pl taxdump/nodes.dmp taxdump/names.dmp blast_hits.tsv > ${query}_results.tsv
 
     # For the report

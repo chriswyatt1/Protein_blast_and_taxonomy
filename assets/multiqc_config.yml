@@ -16,10 +16,14 @@ report_section_order:
     order: 980
   top_hit_identity:
     order: 970
-  top_hit_phylum:
+  top_hit_coverage:
+    order: 965
+  expected_taxon:
     order: 960
-  top_hit_genus:
+  top_hit_phylum:
     order: 950
+  top_hit_genus:
+    order: 940
   software_versions:
     order: -1000
 
