@@ -1,6 +1,6 @@
 # Protein_blast_and_taxonomy
 
-Nextflow pipeline to run diamond blast and retrieve family level names for each protein.
+Nextflow pipeline to run diamond blast (or NCBI blastp / blastn) and retrieve family level names for each protein or transcript.
 
 Version 2 brings the pipeline up to date with Nextflow 26 and current NCBI data. See [CHANGELOG.md](CHANGELOG.md) for what changed from v1.
 
@@ -25,6 +25,8 @@ Second, if you have proteins (one per gene) already, you can run with the `--pro
 
 Third, you need to choose your environment profile. Use `-profile docker` for a local run with Docker, `-profile myriad` for UCL's Myriad cluster, `-profile cscluster` for the UCL CS cluster, or `-profile apptainer` for Apptainer.
 
+Fourth, choose the search tool with `--search_tool` (see [Search tool](#search-tool)). The default, `diamond`, is the fastest.
+
 The final consideration is the database, described next.
 
 # The database
@@ -35,10 +37,12 @@ The pipeline never downloads a database unless you ask it to. You must either po
 |----------|--------------|---------------|
 | An existing DIAMOND database, e.g. a shared `nr.dmnd` (**recommended**) | ~350 GB for nr built from NCBI's last nr FASTA (Feb 2024). No download. | `--predownloaded /path/to/nr.dmnd` |
 | NCBI nr, downloaded by the pipeline in BLAST format | **~393 GB download, ~755 GB on disk: you need about 800 GB free** | `--downloaddb_800GB` |
+| NCBI core_nt (nucleotides, for `--search_tool blastn`), downloaded in BLAST format | ~260 GB download, ~305 GB on disk | `--search_tool blastn --downloaddb_800GB` |
+| NCBI nt (all nucleotides) | **~1,032 GB download, ~1,210 GB on disk: more than the flag name says** | `--search_tool blastn --downloaddb_800GB --blast_db nt` |
 | NCBI Swiss-Prot, for testing | ~225 MB download, ~0.7 GB on disk | `-profile test` |
 | NCBI taxonomy (`names.dmp`, `nodes.dmp`), always needed | ~80 MB download, ~540 MB on disk | `--names` and `--nodes` |
 
-Sizes are as of October 2026. NCBI nr roughly doubles every two years, so expect these to grow.
+Sizes are as of October 2026. NCBI nr roughly doubles every two years, so expect these to grow. The download step prints the size of the database it is about to fetch.
 
 ## Option 1 (default): use an existing database
 
@@ -95,7 +99,21 @@ Before a big run, check everything works on your system with the built-in test. 
 nextflow run main.nf -profile test,docker
 ```
 
-Results are written to `results_test/`.
+Results are written to `results_test/`. Add `--search_tool blastp` or `--search_tool blastn` to test NCBI BLAST instead. The blastn test downloads the small RefSeq Select RNA database (~0.1 GB, human and mouse only), so `Example.fasta` gets very few hits: it checks the steps run, not the biology.
+
+# Search tool
+
+Choose how sequences are searched with `--search_tool`:
+
+| `--search_tool` | Input | Database | Notes |
+|-----------------|-------|----------|-------|
+| `diamond` (default) | `--proteins`, or `--nucleotide` (translated with TransDecoder) | DIAMOND `.dmnd`, or an NCBI BLAST protein database (default `nr`) | Much faster than NCBI blastp. |
+| `blastp` | `--proteins`, or `--nucleotide` (translated with TransDecoder) | NCBI BLAST protein database folder (default `nr`) | NCBI BLAST+ blastp. Much slower than diamond: a large protein set against all of nr can take days. |
+| `blastn` | `--nucleotide` only (longest transcript per gene, not translated) | NCBI BLAST nucleotide database folder (default `core_nt`) | NCBI BLAST+ blastn (megablast), best for close matches. |
+
+NCBI BLAST needs a BLAST-format database folder (from Option 2 or NCBI), not a `.dmnd`. All three tools produce the same output columns, so the taxonomy results are made the same way. With NCBI BLAST, a `--numhits` below 5 makes BLAST print the warning "Examining 5 or more matches is recommended"; this is expected.
+
+NCBI BLAST steps may run for up to 48 h (limited by `--max_time`). For bigger jobs, raise `--max_time`, or split your input into several fasta files, which are searched in parallel.
 
 # Running the workflow on your data
 
@@ -116,13 +134,14 @@ On a Sun Grid Engine cluster, swap `-profile docker` for your cluster profile, e
 | `--nucleotide` | | Nucleotide transcript fasta file(s), translated with TransDecoder. |
 | `--nucl_type` | `trinity` | Header format of `--nucleotide` files: `trinity`, `ensembl` or `basic`. |
 | `--predownloaded` | | An existing database: a DIAMOND `.dmnd` file (or the folder containing `nr.dmnd`), or an NCBI BLAST database folder. |
-| `--downloaddb_800GB` | | Download the NCBI nr database instead (~393 GB download, ~755 GB on disk). Off unless you add it. |
-| `--blast_db` | `nr` | Which NCBI database `--downloaddb_800GB` downloads, or the database name inside a `--predownloaded` folder. |
+| `--downloaddb_800GB` | | Download the NCBI nr database instead (~393 GB download, ~755 GB on disk; core_nt with `--search_tool blastn`). Off unless you add it. |
+| `--search_tool` | `diamond` | `diamond`, `blastp` (NCBI BLAST+) or `blastn` (NCBI BLAST+, nucleotide input). See [Search tool](#search-tool). |
+| `--blast_db` | `nr` (`core_nt` for blastn) | Which NCBI database `--downloaddb_800GB` downloads, or the database name inside a `--predownloaded` folder. |
 | `--names` | | `names.dmp` taxonomy file (needed with `--predownloaded`). |
 | `--nodes` | | `nodes.dmp` taxonomy file (needed with `--predownloaded`). |
-| `--numhits` | `1` | Number of blast hits to keep per sequence (diamond `--max-target-seqs`). |
-| `--tophits` | | Instead of `--numhits`, keep all hits within this percentage of the best hit's score (diamond `--top`). |
-| `--sensitivity` | `fast` | Diamond sensitivity mode, e.g. `fast`, `sensitive`, `more-sensitive`, `ultra-sensitive`. |
+| `--numhits` | `1` | Number of blast hits to keep per sequence (`--max-target-seqs` / `-max_target_seqs`). |
+| `--tophits` | | Diamond only. Instead of `--numhits`, keep all hits within this percentage of the best hit's score (diamond `--top`). |
+| `--sensitivity` | `fast` | Diamond only. Sensitivity mode, e.g. `fast`, `sensitive`, `more-sensitive`, `ultra-sensitive`. |
 | `--outdir` | `results` | Output folder. |
 | `--max_cpus` | `4` | Most CPUs any single step may use. |
 | `--max_memory` | `32.GB` | Most memory any single step may use. Lower this if your machine has less memory, e.g. `--max_memory 12.GB`. |
@@ -134,10 +153,11 @@ To set any of these, use `--` then the parameter name on the command line, e.g. 
 
 Once completed, you should have a folder called `results`, which contains:
 
-- `Blast_results/`: the diamond hits for each input file in tab format (`*_results.tsv`, columns: query, subject, subject title, percent identity, e-value, subject phylum, subject taxonomy id) and the best hit per query (`*_top.tsv`).
+- `Blast_results/`: the blast hits for each input file in tab format (`*_results.tsv`, columns: query, subject, subject title, percent identity, e-value, subject phylum, subject taxonomy id) and the best hit per query (`*_top.tsv`).
 - `Taxo_figure/`: a PDF of pie charts summarising the taxonomy of the best hits at each rank (kingdom to subspecies).
 - `Taxo_summary/`: the counts behind each pie chart (`*_top.tsv_<rank>`), plus a per-gene summary of the phyla hit (`*_summary.tsv`).
-- `Prot/`: the proteins predicted by TransDecoder (only with `--nucleotide`).
+- `Prot/`: the proteins predicted by TransDecoder (only with `--nucleotide`, for diamond and blastp).
+- `Nucl/`: the longest transcript per gene that was searched (only with `--search_tool blastn`).
 - `database/`: the downloaded database (only with `--downloaddb_800GB`).
 
 
@@ -149,7 +169,7 @@ All tools run in pinned containers:
 |------|---------|-----------|
 | DIAMOND | 2.2.8 | `quay.io/biocontainers/diamond:2.2.8--he361c42_0` |
 | TransDecoder | 5.7.1 | `quay.io/biocontainers/transdecoder:5.7.1--pl5321hdfd78af_2` |
-| BLAST+ (database download) | 2.17.0 | `quay.io/biocontainers/blast:2.17.0--hb02a186_1` |
+| BLAST+ (database download, blastp, blastn) | 2.17.0 | `quay.io/biocontainers/blast:2.17.0--hb02a186_1` |
 | R / Perl (taxonomy plots) | 4.6.1 | `rocker/r-ver:4.6.1` |
 
-Please cite DIAMOND (Buchfink, Reuter & Drost, Nature Methods 2021) and TransDecoder (https://github.com/TransDecoder/TransDecoder, as it is not in a journal).
+Please cite DIAMOND (Buchfink, Reuter & Drost, Nature Methods 2021) or BLAST+ (Camacho et al., BMC Bioinformatics 2009), and TransDecoder (https://github.com/TransDecoder/TransDecoder, as it is not in a journal).
