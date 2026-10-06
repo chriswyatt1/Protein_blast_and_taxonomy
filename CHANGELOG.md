@@ -1,55 +1,103 @@
 # Changelog
 
-## v2.1.0 (unreleased)
+The format follows the [nf-core](https://nf-co.re/) changelog style.
 
-### Added
+## [[v2.1.0](https://github.com/chriswyatt1/Protein_blast_and_taxonomy/releases/tag/v2.1.0)] - 2026-10-06
 
-- `--search_tool blastp`: search proteins with NCBI BLAST+ blastp against an NCBI BLAST protein database such as nr ([#5](https://github.com/chriswyatt1/Protein_blast_and_taxonomy/issues/5)).
-- `--search_tool blastn`: search nucleotide transcripts (longest per gene, published to `results/Nucl/`) with NCBI BLAST+ blastn against an NCBI nucleotide database, `core_nt` by default ([#6](https://github.com/chriswyatt1/Protein_blast_and_taxonomy/issues/6)).
-- NCBI BLAST output gets the same columns as diamond (a phylum column is added from the NCBI taxonomy), so the taxonomy plots and summaries work unchanged.
+### Credits
+
+- [Chris Wyatt](https://github.com/chriswyatt1)
+
+### `Added`
+
+- `--search_tool blastp`: search proteins with NCBI BLAST+ blastp against an NCBI BLAST protein database such as nr ([#5](https://github.com/chriswyatt1/Protein_blast_and_taxonomy/issues/5)). Input is `--proteins`, or `--nucleotide` translated with TransDecoder, as for diamond. It is much slower than diamond: a large protein set against all of nr can take days.
+- `--search_tool blastn`: search nucleotide transcripts with NCBI BLAST+ blastn (megablast) against an NCBI nucleotide database, `core_nt` by default ([#6](https://github.com/chriswyatt1/Protein_blast_and_taxonomy/issues/6)). The longest transcript per gene is searched directly, without TransDecoder, and published to `results/Nucl/`.
+- NCBI BLAST output has the same columns as diamond's. `bin/add_phylum.pl` adds the phylum column from the NCBI taxonomy, so the taxonomy plots and summaries work unchanged.
 - `--downloaddb_800GB` can download nucleotide databases, and prints the size of the database before downloading it.
-- `-profile test` accepts `--search_tool blastp` or `--search_tool blastn`.
+- `-profile test` accepts `--search_tool blastp` or `--search_tool blastn`. The blastn test uses the small RefSeq Select RNA database (~0.1 GB, human and mouse only), so `Example.fasta` gets very few hits: it checks the steps run, not the biology.
 
-### Changed
+### `Changed`
 
-- `--blast_db` defaults to `core_nt` with `--search_tool blastn` (still `nr` otherwise).
-- The run stops straight away for options that can't work together: `--search_tool blastn` without `--nucleotide`, `--tophits` with NCBI BLAST, or NCBI BLAST with a `.dmnd` database.
+- `--blast_db` defaults to `core_nt` with `--search_tool blastn`, and stays `nr` otherwise. core_nt is NCBI's default nucleotide database (~260 GB download, ~305 GB on disk). Full `nt` (~1,032 GB download, ~1,210 GB on disk) is available with `--blast_db nt`; the README warns that it is bigger than the flag name says.
+- The run stops before doing anything for option combinations that can't work: blastn without `--nucleotide`, `--tophits` with NCBI BLAST, NCBI BLAST against a `.dmnd` database, or an unknown `--search_tool`.
+- The "no database" message gives the size of the database that would be downloaded.
+- NCBI BLAST steps may run for up to 48 h (still limited by `--max_time`).
 
-## v2.0.0 (2026-10-06)
+### Parameters
 
-### Breaking changes
+| Old parameter | New parameter   |
+| ------------- | --------------- |
+|               | `--search_tool` |
 
-- **Nextflow 25.04 or newer is required.** The pipeline now passes `nextflow lint` and runs on Nextflow 26, where the strict syntax parser is the default (v1 failed to parse its config on Nextflow 26).
-- **The pipeline no longer downloads a database by default.** Point to an existing DIAMOND database with `--predownloaded nr.dmnd --names names.dmp --nodes nodes.dmp` (recommended), or ask for the download explicitly with `--downloaddb_800GB`. With neither, it stops before running anything.
-- **`--downloaddb_800GB` downloads NCBI's preformatted BLAST database (default `nr`, ~393 GB download, ~755 GB on disk) instead of `nr.gz`.** NCBI stopped updating the `nr.gz` FASTA file in February 2024, so v1 always downloaded a stale database. DIAMOND 2.2 searches BLAST databases directly, so the `MAKE_DB` step and the `prot.accession2taxid` download are gone. Choose another NCBI database with `--blast_db`.
-- `--max_cpus`, `--max_memory` and `--max_time` now cap every step (using Nextflow's `resourceLimits`, which replaces the `check_max` function). The `myriad` and `cscluster` profiles raise the caps to keep their v1 resources.
-- All containers changed (see below). Profile configs no longer set containers; each module pins its own.
+> **NB:** Parameter has been **added** if just the new parameter information is present.
 
-### Fixed
+### `Dependencies`
 
-- v1 could no longer build a database from current NCBI data: DIAMOND 2.0.13 rejects the `domain` rank NCBI added to the taxonomy in 2025 ("Invalid taxonomic rank: domain").
-- `names.dmp` and `nodes.dmp` were swapped when the database was downloaded, so the taxonomy pie charts came out empty.
-- The blast step used `--top $params.tophits`, which was undefined, so diamond got `--top null`. `--numhits` works again, and `--tophits` is now a real option.
-- The top-hit (`*_top.tsv`) and per-gene summary (`*_summary.tsv`) files were never published to `results/`.
-- Species and subspecies counts were inflated because ranks with spaces (e.g. "species group") were cut to "species" when reading `nodes.dmp`.
-- Running without `--proteins` or `--nucleotide` now stops with a clear error; `--predownloaded` without `--names`/`--nodes` also errors straight away.
-- README: the example command now uses `--nucl_type basic`. With the default `trinity`, `Example.fasta` collapsed from 560 transcripts to 5 "genes".
+No new dependencies: NCBI BLAST runs in the BLAST+ 2.17.0 container already used to download databases.
 
-### Updated
+## [[v2.0.0](https://github.com/chriswyatt1/Protein_blast_and_taxonomy/releases/tag/v2.0.0)] - 2026-10-06
 
-- DIAMOND 2.0.13 → 2.2.8 (`quay.io/biocontainers/diamond`). Existing `.dmnd` databases built by v1 still work with `--predownloaded`.
-- TransDecoder 5.5.0 (copied into `bin/`) → 5.7.1 (`quay.io/biocontainers/transdecoder`). Predicted proteins are identical on `Example.fasta`.
-- R 4.1.0 → 4.6.1 (`rocker/r-ver`, which has native arm64 images).
-- Database download uses the BLAST+ 2.17.0 container, md5-checks every volume and extracts volumes one at a time to keep disk use down.
+### Credits
 
-### Added
+- [Chris Wyatt](https://github.com/chriswyatt1)
 
-- `-profile test`: a quick end-to-end run on the NCBI Swiss-Prot database.
-- `--predownloaded` accepts a `.dmnd` file, the folder containing `nr.dmnd`, or an NCBI BLAST database folder.
-- The README lists the size of each database option.
-- The downloaded database is published to `results/database/` (as hard links) so it is easy to reuse with `--predownloaded`.
-- The per-rank taxonomy count tables are published to `results/Taxo_summary/`.
+### `Added`
 
-### Removed
+- `--downloaddb_800GB`: downloading a database is now opt-in. Without it or `--predownloaded`, the pipeline stops before running anything and explains both options.
+- `-profile test`: an end-to-end run on the NCBI Swiss-Prot database (~225 MB) and `Example.fasta` that takes a few minutes.
+- `--blast_db` to choose which NCBI BLAST protein database `--downloaddb_800GB` fetches (default `nr`).
+- `--tophits` to keep every hit within a percentage of the best score (diamond `--top`), as an alternative to `--numhits`.
+- `--predownloaded` accepts a DIAMOND `.dmnd` file, the folder containing `nr.dmnd`, or an NCBI BLAST database folder.
+- The downloaded database is published to `results/database/` as hard links, ready to reuse with `--predownloaded`.
+- Per-rank taxonomy count tables are published to `results/Taxo_summary/`.
+- `CHANGELOG.md`, and a README section giving the size of each database option.
 
-- `modules/make_blast_db.nf`, the copied TransDecoder code (`bin/TransDecoder.LongOrfs`, `bin/util/`) and the `docker/` build files for the old images.
+### `Changed`
+
+- **Breaking:** requires Nextflow ≥ 25.04. The pipeline passes `nextflow lint` and runs on Nextflow 26 with the default strict syntax parser.
+- **Breaking:** no database is downloaded unless you add `--downloaddb_800GB`. The recommended route is an existing DIAMOND database: `--predownloaded nr.dmnd --names names.dmp --nodes nodes.dmp`.
+- **Breaking:** `--downloaddb_800GB` fetches NCBI's preformatted BLAST `nr` (~393 GB download, ~755 GB on disk) instead of the frozen `nr.gz`. DIAMOND searches it directly, so the `MAKE_DB` step and the `prot.accession2taxid` download are gone. Volumes are md5-checked and extracted one at a time.
+- **Breaking:** `--max_cpus`, `--max_memory` and `--max_time` now cap every process through Nextflow's `resourceLimits`, which replaces the `check_max` function. The `myriad` and `cscluster` profiles raise the caps (6 CPUs, 40 GB) to keep their v1 resources.
+- All containers are pinned and set only in the modules; profile configs no longer override them.
+
+### `Fixed`
+
+- Building a database from current NCBI data failed, because DIAMOND 2.0.13 rejects the `domain` rank NCBI added to the taxonomy in 2025.
+- With a downloaded database, `PLOT_PIE` received `names.dmp` and `nodes.dmp` the wrong way round, so the taxonomy plots were empty.
+- `DIAMOND_BLAST` passed `--top $params.tophits`, which was undefined, so diamond got `--top null`. `--numhits` works again.
+- `*_top.tsv` and `*_summary.tsv` were never published, because their `publishDir` patterns matched undeclared outputs.
+- Ranks containing spaces (e.g. `species group`) were read as `species`, inflating the species counts. On `Example.fasta` this gave 568 species for 341 proteins; it now gives 341.
+- A missing input, or `--predownloaded` without `--names`/`--nodes`, now stops with a clear error before any work runs.
+- The README example now uses `--nucl_type basic`. With the default `trinity`, `Example.fasta` collapsed from 560 transcripts to 5 "genes".
+
+### `Removed`
+
+- `MAKE_DB` (`modules/make_blast_db.nf`), the vendored TransDecoder 5.5.0 (`bin/TransDecoder.LongOrfs`, `bin/util/`), and the `docker/` recipes for the old `chriswyatt/*` images.
+
+### Parameters
+
+| Old parameter | New parameter        |
+| ------------- | -------------------- |
+|               | `--downloaddb_800GB` |
+|               | `--blast_db`         |
+|               | `--tophits`          |
+|               | `--max_time`         |
+
+> **NB:** Parameter has been **added** if just the new parameter information is present.
+
+### `Dependencies`
+
+| Dependency     | Old version | New version |
+| -------------- | ----------- | ----------- |
+| `diamond`      | 2.0.13      | 2.2.8       |
+| `transdecoder` | 5.5.0       | 5.7.1       |
+| `r-base`       | 4.1.0       | 4.6.1       |
+| `blast`        | 2.11.0      | 2.17.0      |
+
+> **NB:** Dependency has been **updated** if both old and new version information is present.
+>
+> **NB:** Dependency has been **added** if just the new version information is present.
+>
+> **NB:** Dependency has been **removed** if new version information isn't present.
+
+Existing `nr.dmnd` databases keep working: one built with DIAMOND 2.0.15 gives identical hits and taxonomy with 2.2.8. TransDecoder 5.7.1 predicts the same 1,145 proteins as 5.5.0 on `Example.fasta`. Species and subspecies counts will differ from v1 results because of the rank fix above.
