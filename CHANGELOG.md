@@ -2,6 +2,41 @@
 
 The format follows the [nf-core](https://nf-co.re/) changelog style.
 
+## [[v2.2.0](https://github.com/chriswyatt1/Protein_blast_and_taxonomy/releases/tag/v2.2.0)] - 2026-10-06
+
+### Credits
+
+- [Chris Wyatt](https://github.com/chriswyatt1)
+
+### `Added`
+
+- A report of the whole run, made with MultiQC: `results/report/Protein_blast_and_taxonomy_multiqc_report.html`. It contains:
+  - run information: pipeline and Nextflow versions, the command, the search tool and its settings, and the database;
+  - the database: its location, type, size and date (from `diamond dbinfo` or `blastdbcmd -info`), and the NCBI taxonomy files used;
+  - a search summary for each input file: sequences searched, how many found a hit, how many top hits are ≥95% identical, the median identity, and the number of phyla, genera and species hit;
+  - interactive bar charts of the identity of the top hits (including sequences with no hit), and of the phylum and genus of the top hits;
+  - the taxonomy pie chart figure;
+  - the software versions.
+- Software versions are collected with Nextflow topic channels, as nf-core modules do, and saved to `results/pipeline_info/Protein_blast_and_taxonomy_software_mqc_versions.yml`. Only the main programs are recorded: DIAMOND or BLAST+, TransDecoder and R, plus Nextflow and the pipeline version.
+- The taxonomy pie chart figure is also saved as a PNG in `Taxo_figure/`.
+
+### `Changed`
+
+- The per-rank count tables in `Taxo_summary/` (`*_top.tsv_<rank>`) now have a `<rank>`/`count` header and no row numbers.
+
+### `Fixed`
+
+- The per-rank count tables were malformed when an input file's top hits had one taxon or none: R dropped the taxon names or the row numbers.
+- `-profile test` failed on Nextflow 25.04 unless `--search_tool` was given (`Unknown config attribute params.search_tool`).
+
+### `Dependencies`
+
+| Dependency | Old version | New version |
+| ---------- | ----------- | ----------- |
+| `multiqc`  |             | 1.35        |
+
+> **NB:** Dependency has been **added** if just the new version information is present.
+
 ## [[v2.1.0](https://github.com/chriswyatt1/Protein_blast_and_taxonomy/releases/tag/v2.1.0)] - 2026-10-06
 
 ### Credits

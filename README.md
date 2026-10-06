@@ -153,12 +153,20 @@ To set any of these, use `--` then the parameter name on the command line, e.g. 
 
 Once completed, you should have a folder called `results`, which contains:
 
+- `report/Protein_blast_and_taxonomy_multiqc_report.html`: **start here.** A report (made with [MultiQC](https://multiqc.info)) of the whole run:
+  - run information: pipeline and Nextflow versions, the command, the search tool and its settings, and the database;
+  - the database: its location, type, size and date, and the NCBI taxonomy files used;
+  - a search summary for each input file: sequences searched, how many found a hit, how many top hits are ≥95% identical (usually the same or a very closely related species), the median identity, and the number of phyla, genera and species hit;
+  - interactive bar charts of the identity of the top hits (including sequences with no hit), and of the phylum and genus of the top hits;
+  - the taxonomy pie chart figure;
+  - the versions of the main software used (DIAMOND or BLAST+, TransDecoder, R, Nextflow).
 - `Blast_results/`: the blast hits for each input file in tab format (`*_results.tsv`, columns: query, subject, subject title, percent identity, e-value, subject phylum, subject taxonomy id) and the best hit per query (`*_top.tsv`).
-- `Taxo_figure/`: a PDF of pie charts summarising the taxonomy of the best hits at each rank (kingdom to subspecies).
-- `Taxo_summary/`: the counts behind each pie chart (`*_top.tsv_<rank>`), plus a per-gene summary of the phyla hit (`*_summary.tsv`).
+- `Taxo_figure/`: pie charts summarising the taxonomy of the best hits at each rank (kingdom to subspecies), as a PDF and a PNG.
+- `Taxo_summary/`: the counts behind each pie chart (`*_top.tsv_<rank>`, columns: taxon, count), plus a per-gene summary of the phyla hit (`*_summary.tsv`).
 - `Prot/`: the proteins predicted by TransDecoder (only with `--nucleotide`, for diamond and blastp).
 - `Nucl/`: the longest transcript per gene that was searched (only with `--search_tool blastn`).
 - `database/`: the downloaded database (only with `--downloaddb_800GB`).
+- `pipeline_info/`: the software versions used (`Protein_blast_and_taxonomy_software_mqc_versions.yml`).
 
 
 # Software
@@ -171,5 +179,6 @@ All tools run in pinned containers:
 | TransDecoder | 5.7.1 | `quay.io/biocontainers/transdecoder:5.7.1--pl5321hdfd78af_2` |
 | BLAST+ (database download, blastp, blastn) | 2.17.0 | `quay.io/biocontainers/blast:2.17.0--hb02a186_1` |
 | R / Perl (taxonomy plots) | 4.6.1 | `rocker/r-ver:4.6.1` |
+| MultiQC (report) | 1.35 | `quay.io/biocontainers/multiqc:1.35--pyhdfd78af_2` |
 
-Please cite DIAMOND (Buchfink, Reuter & Drost, Nature Methods 2021) or BLAST+ (Camacho et al., BMC Bioinformatics 2009), and TransDecoder (https://github.com/TransDecoder/TransDecoder, as it is not in a journal).
+Please cite DIAMOND (Buchfink, Reuter & Drost, Nature Methods 2021) or BLAST+ (Camacho et al., BMC Bioinformatics 2009), MultiQC (Ewels et al., Bioinformatics 2016), and TransDecoder (https://github.com/TransDecoder/TransDecoder, as it is not in a journal).

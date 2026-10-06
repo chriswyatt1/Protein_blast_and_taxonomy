@@ -137,7 +137,8 @@ print $out_Rcmds "data_genus=c(\"$genus\");\n";
 print $out_Rcmds "data_species=c(\"$species\");\n";
 print $out_Rcmds "data_subspecies=c(\"$subspecies\");\n";
 
-print $out_Rcmds "pdf(\"Res_$input\_complete\.pdf\", width=8 , height=16 , useDingbats=F)\n";
+#Draw the pies in a function, so the same figure is saved as a PDF and as a PNG (for the report)
+print $out_Rcmds "plot_pies <- function(){\n";
 print $out_Rcmds "par(mfrow = c(4,2))\n";
 
 print $out_Rcmds "
@@ -145,57 +146,71 @@ temp=names(table(data_kingdom))
 temp2=table(data_kingdom)
 temp[temp2 <  (length(data_kingdom))/100] <- NA
 pie(main = c(\"Count\",length(data_kingdom)), temp2, temp )
-write.table(sort(table(data_kingdom), decreasing = T),\"$input\_kingdom\", sep=\"\t\", quote=F)\n";
+counts=sort(table(data_kingdom[data_kingdom != \"\"]), decreasing = T)
+write.table(data.frame(kingdom=as.character(names(counts)), count=as.vector(counts)),\"$input\_kingdom\", sep=\"\t\", quote=F, row.names=F)\n";
 
 print $out_Rcmds "
 temp=names(table(data_phylum))
 temp2=table(data_phylum)
 temp[temp2 <  (length(data_phylum))/100] <- NA
 pie(main = c(\"Count\",length(data_phylum)), temp2, temp )
-write.table(sort(table(data_phylum), decreasing = T),\"$input\_phylum\", sep=\"\t\", quote=F)\n";
+counts=sort(table(data_phylum[data_phylum != \"\"]), decreasing = T)
+write.table(data.frame(phylum=as.character(names(counts)), count=as.vector(counts)),\"$input\_phylum\", sep=\"\t\", quote=F, row.names=F)\n";
 
 print $out_Rcmds "
 temp=names(table(data_class))
 temp2=table(data_class)
 temp[temp2 <  (length(data_class))/100] <- NA
 pie(main = c(\"Count\",length(data_class)), temp2, temp )
-write.table(sort(table(data_class), decreasing = T),\"$input\_class\", sep=\"\t\", quote=F)\n";
+counts=sort(table(data_class[data_class != \"\"]), decreasing = T)
+write.table(data.frame(class=as.character(names(counts)), count=as.vector(counts)),\"$input\_class\", sep=\"\t\", quote=F, row.names=F)\n";
 
 print $out_Rcmds "
 temp=names(table(data_order))
 temp2=table(data_order)
 temp[temp2 <  (length(data_order))/100] <- NA
 pie(main = c(\"Count\",length(data_order)), temp2, temp )
-write.table(sort(table(data_order), decreasing = T),\"$input\_order\", sep=\"\t\", quote=F)\n";
+counts=sort(table(data_order[data_order != \"\"]), decreasing = T)
+write.table(data.frame(order=as.character(names(counts)), count=as.vector(counts)),\"$input\_order\", sep=\"\t\", quote=F, row.names=F)\n";
 
 print $out_Rcmds "
 temp=names(table(data_family))
 temp2=table(data_family)
 temp[temp2 <  (length(data_family))/100] <- NA
 pie(main = c(\"Count\",length(data_family)), temp2, temp )
-write.table(sort(table(data_family), decreasing = T),\"$input\_family\", sep=\"\t\", quote=F)\n";
+counts=sort(table(data_family[data_family != \"\"]), decreasing = T)
+write.table(data.frame(family=as.character(names(counts)), count=as.vector(counts)),\"$input\_family\", sep=\"\t\", quote=F, row.names=F)\n";
 
 print $out_Rcmds "
 temp=names(table(data_genus))
 temp2=table(data_genus)
 temp[temp2 <  (length(data_genus))/100] <- NA
 pie(main = c(\"Count\",length(data_genus)), temp2, temp )
-write.table(sort(table(data_genus), decreasing = T),\"$input\_genus\", sep=\"\t\", quote=F)\n";
+counts=sort(table(data_genus[data_genus != \"\"]), decreasing = T)
+write.table(data.frame(genus=as.character(names(counts)), count=as.vector(counts)),\"$input\_genus\", sep=\"\t\", quote=F, row.names=F)\n";
 
 print $out_Rcmds "
 temp=names(table(data_species))
 temp2=table(data_species)
 temp[temp2 <  (length(data_species))/100] <- NA
 pie(main = c(\"Count\",length(data_species)), temp2, temp )
-write.table(sort(table(data_species), decreasing = T),\"$input\_species\", sep=\"\t\", quote=F)\n";
+counts=sort(table(data_species[data_species != \"\"]), decreasing = T)
+write.table(data.frame(species=as.character(names(counts)), count=as.vector(counts)),\"$input\_species\", sep=\"\t\", quote=F, row.names=F)\n";
 
 print $out_Rcmds "
 temp=names(table(data_subspecies))
 temp2=table(data_subspecies)
 temp[temp2 <  (length(data_subspecies))/100] <- NA
 pie(main = c(\"Count\",length(data_subspecies)), temp2, temp )
-write.table(sort(table(data_subspecies), decreasing = T),\"$input\_subspecies\", sep=\"\t\", quote=F)\n";
+counts=sort(table(data_subspecies[data_subspecies != \"\"]), decreasing = T)
+write.table(data.frame(subspecies=as.character(names(counts)), count=as.vector(counts)),\"$input\_subspecies\", sep=\"\t\", quote=F, row.names=F)\n";
 
+print $out_Rcmds "}\n";
+print $out_Rcmds "pdf(\"Res_$input\_complete\.pdf\", width=8 , height=16 , useDingbats=F)\n";
+print $out_Rcmds "plot_pies()\n";
+print $out_Rcmds "dev.off()\n";
+print $out_Rcmds "png(\"Res_$input\_complete\.png\", width=8 , height=16 , units=\"in\", res=100)\n";
+print $out_Rcmds "plot_pies()\n";
 print $out_Rcmds "dev.off()\n";
 
 `R --vanilla <ACTUAL_R_CODE> output.ofthis.test`;

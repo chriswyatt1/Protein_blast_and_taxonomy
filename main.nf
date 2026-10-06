@@ -33,7 +33,12 @@ include { PLOT_PIE } from './modules/plot_taxonomy_pie.nf'
 include { T_DECODER } from './modules/transdecoder.nf'
 include { LONGEST_ISOFORM } from './modules/longest_isoform.nf'
 include { NCBI_BLAST } from './modules/ncbi_blast.nf'
+include { MULTIQC } from './modules/multiqc.nf'
 
+// Make text safe to show in the HTML report
+def escapeHtml(text) {
+	return text.toString().replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+}
 
 workflow {
 	def search_tool = params.search_tool
@@ -120,17 +125,65 @@ workflow {
 	}
 
 	def blast_hits
+	def database_info
 	if ( search_tool == "diamond" ){
 		DIAMOND_BLAST ( input_queries , input_database , blast_db , input_nodes , input_names )
 		blast_hits = DIAMOND_BLAST.out.blast_hits
+		database_info = DIAMOND_BLAST.out.db_info
 	}
 	else{
 		NCBI_BLAST ( input_queries , input_database , blast_db , search_tool , input_nodes , input_names )
 		blast_hits = NCBI_BLAST.out.blast_hits
+		database_info = NCBI_BLAST.out.db_info
 	}
-	PLOT_PIE ( input_nodes , input_names , blast_hits )
+
+	// Pair each query file with its hits, so the report can count the sequences searched
+	def queries_by_name = input_queries.map { query -> [ query.name, query ] }
+	def hits_by_name = blast_hits.map { hits -> [ hits.name - '_results.tsv', hits ] }
+	PLOT_PIE ( input_nodes , input_names , queries_by_name.join(hits_by_name).map { _name, query, hits -> [ query, hits ] } )
+
+	//================================================================================
+	// Report: run information, database, results summary and software versions
+	//================================================================================
+
+	// Collate the software versions each process sends to the versions topic (as nf-core does)
+	def versions_yml = channel.topic("versions")
+		.distinct()
+		.map { process, tool, version -> [ process[process.lastIndexOf(':')+1..-1], "  ${tool}: ${version}" ] }
+		.groupTuple(by: 0)
+		.map { process, tool_versions -> "${process}:\n${tool_versions.unique().sort().join('\n')}".toString() }
+		// toString(): Nextflow 25.04 cannot pass its version object through collectFile
+		.mix( channel.of("Workflow:\n  Nextflow: ${workflow.nextflow.version}\n  Protein_blast_and_taxonomy: v${workflow.manifest.version}".toString()) )
+		.collectFile( storeDir: "${params.outdir}/pipeline_info", name: 'Protein_blast_and_taxonomy_software_mqc_versions.yml', sort: true, newLine: true )
+
+	def search_settings = search_tool != "diamond" ? "${params.numhits} hit(s) per sequence"
+		: params.tophits ? "--${params.sensitivity}, hits within ${params.tophits}% of the top score"
+		: "--${params.sensitivity}, ${params.numhits} hit(s) per sequence"
+	def run_info_html = [
+		"<!--",
+		"id: 'run_info'",
+		"section_name: 'Run information'",
+		"-->",
+		"<dl class=\"dl-horizontal\">",
+		"<dt>Pipeline</dt><dd>Protein_blast_and_taxonomy v${workflow.manifest.version}</dd>",
+		"<dt>Nextflow</dt><dd>${workflow.nextflow.version}</dd>",
+		"<dt>Run name</dt><dd>${workflow.runName}</dd>",
+		"<dt>Started</dt><dd>${workflow.start}</dd>",
+		"<dt>Command</dt><dd><code>${escapeHtml(workflow.commandLine)}</code></dd>",
+		"<dt>Input</dt><dd>${escapeHtml(params.proteins ?: params.nucleotide)}</dd>",
+		"<dt>Search tool</dt><dd>${search_tool} (${search_settings})</dd>",
+		"<dt>Database</dt><dd>${escapeHtml(params.predownloaded ?: "NCBI ${blast_db}, downloaded by this run (saved in ${params.outdir}/database/)")}</dd>",
+		"</dl>"
+	].join("\n")
+
+	def report_files = PLOT_PIE.out.mqc.flatten()
+		.mix( database_info.first() )
+		.mix( channel.of(run_info_html).collectFile(name: 'run_info_mqc.html') )
+		.mix( versions_yml )
+		.collect()
+	MULTIQC ( report_files , file("${projectDir}/assets/multiqc_config.yml", checkIfExists: true) )
 
 	workflow.onComplete = {
-		println ( workflow.success ? "\nDone! Results are in --> $params.outdir\n" : "Hmmm .. something went wrong" )
+		println ( workflow.success ? "\nDone! Results are in --> $params.outdir (report: $params.outdir/report/Protein_blast_and_taxonomy_multiqc_report.html)\n" : "Hmmm .. something went wrong" )
 	}
 }

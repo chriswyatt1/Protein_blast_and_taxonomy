@@ -13,6 +13,8 @@ process NCBI_BLAST {
 
     output:
         path("*_results.tsv") , emit: blast_hits
+        path("database_info_mqc.html") , emit: db_info
+        tuple val("${task.process}"), val('blast'), eval("${program} -version | head -1 | sed 's/^.*: //'"), emit: versions_blast, topic: versions
 
     script:
     """
@@ -23,5 +25,8 @@ process NCBI_BLAST {
 
     # Add the phylum column, so the output matches diamond's (qseqid sseqid stitle pident evalue sphylums staxids)
     add_phylum.pl taxdump/nodes.dmp taxdump/names.dmp blast_hits.tsv > ${query}_results.tsv
+
+    # For the report
+    database_info.sh blast ${database} ${database}/${db_name} taxdump/nodes.dmp
     """
 }
