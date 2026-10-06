@@ -26,9 +26,10 @@ my %node_hash_order;
 
 while (my $line=<$NODE_IN>){
 	chomp $line;
-	my @linesplit=split(' ', $line);
-	$node_hash_parent{$linesplit[0]}=$linesplit[2];
-	$node_hash_order{$linesplit[0]}=$linesplit[4];
+	#Split on the dmp field separator, as ranks can contain spaces (e.g. "species group")
+	my @linesplit=split(/\t\|\t/, $line);
+	$node_hash_parent{$linesplit[0]}=$linesplit[1];
+	$node_hash_order{$linesplit[0]}=$linesplit[2];
 }
 
 

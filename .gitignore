@@ -9,3 +9,5 @@ trace*
 results/*
 Input_prot_gotits.txt
 blastdb
+results_test
+apptainer

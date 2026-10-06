@@ -1,6 +1,6 @@
 process DIAMOND_HORIZONTAL {
     label 'blast'
-    container = 'chriswyatt/diamond'
+    container 'quay.io/biocontainers/diamond:2.2.8--he361c42_0'
     publishDir "$params.outdir/Blast_results/", mode:'copy'
     
     input:
@@ -12,7 +12,7 @@ process DIAMOND_HORIZONTAL {
 
     script:
     """
-        diamond blastp --fast --top 10 --query $proteins --db nr --out ${proteins}\_horizresults.tsv --threads $task.cpus --outfmt 6 qseqid sseqid stitle pident evalue sphylums staxids sscinames
+        diamond blastp --fast --top 10 --query $proteins --db nr --out ${proteins}_horizresults.tsv --threads $task.cpus --outfmt 6 qseqid sseqid stitle pident evalue sphylums staxids sscinames
         #rm nr.dmnd
         #rm $proteins
     """
