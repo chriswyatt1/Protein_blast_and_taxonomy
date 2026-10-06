@@ -2,79 +2,154 @@
 
 Nextflow pipeline to run diamond blast and retrieve family level names for each protein.
 
+Version 2 brings the pipeline up to date with Nextflow 26 and current NCBI data. See [CHANGELOG.md](CHANGELOG.md) for what changed from v1.
+
 # Pre-requisites
 
 - You must be on a unix machine (mac, linux etc.) or cluster.
-- Have Nextflow installed (https://www.nextflow.io/docs/latest/getstarted.html). 
-- You must have at least 125GB of space to run this workflow, as the blast DB is this size. 
-- LOCAL (option 1 or next option): requires Docker (https://docs.docker.com/get-docker/; then login).
-- SUNGRID ENGINE ( option2 or previous option): requires Singularity (https://sylabs.io/guides/3.0/user-guide/installation.html). Normally already on the HPC Sun Grid Engine clusters.
-- Git (optional) (https://github.com/git-guides/install-git). SO you can git clone the repo
+- Nextflow 25.04 or newer (https://www.nextflow.io/docs/latest/getstarted.html). Tested on Nextflow 26.04.
+- LOCAL: requires Docker (https://docs.docker.com/get-docker/). On Apple Silicon Macs the containers run under Docker's x86 emulation, which works but is slow for large searches.
+- SUN GRID ENGINE CLUSTER: requires Singularity or Apptainer. Normally already on the HPC Sun Grid Engine clusters.
+- A protein database to search against, ideally an existing DIAMOND database (`.dmnd`). See [The database](#the-database) for the options and their sizes.
+- Git (optional) (https://github.com/git-guides/install-git). So you can git clone the repo.
 
 # Setting up
 
-First, you need to clone the repository from github `git clone https://github.com/chriswyatt1/Protein_blast_and_taxonomy.git`, if you have git installed, OR download the zip folder from `https://github.com/chriswyatt1/Protein_blast_and_taxonomy.git`, then unzip it `unzip Protein_blast_and_taxonomy-Myriad_UCL.zip` and `cd` into this directory. 
+First, you need to clone the repository from github `git clone https://github.com/chriswyatt1/Protein_blast_and_taxonomy.git`, if you have git installed, OR download the zip folder from `https://github.com/chriswyatt1/Protein_blast_and_taxonomy`, then unzip it and `cd` into this directory.
 
-Second, if you have proteins (one per gene) alredy, you can run with the -protein flag. If you have nucleotide fasta IDs, you need to use the -nucleotide flag , which will find the unique proteins (longest per gene).
+Second, if you have proteins (one per gene) already, you can run with the `--proteins` flag. If you have nucleotide transcripts, use the `--nucleotide` flag, which keeps the longest transcript per gene and finds the open reading frames with TransDecoder. Tell the pipeline how your fasta headers are formatted with `--nucl_type`:
 
-Third, you need to choose your environment profile. The two currently avialable are for a local Docker run, if local and must have docker installed on your machine (then use `-profile docker` in the script). OR, if you are running on a SunGrid Engine cluster, you can use the Myriad profile (which is a UCL custom config file for running on a specific sge cluster in UCL), use with `-profile myriad`.
+- `trinity` (default): Trinity headers such as `TRINITY_DN1000_c0_g1_i1`. The isoform suffix (`_i1`) is removed to group isoforms into genes.
+- `ensembl`: Ensembl cDNA headers, grouped by the gene ID after the first `:`.
+- `basic`: any other headers. Every sequence is kept as its own gene (this is what `Example.fasta` needs).
 
-The final consideration is where you have the NCBI blast database. If you plan to run multiple times its best to run this pipeline once, then move these large files somewhere on yourfile system and point to them in subsequent runs (is around 100GB,,,,so be careful)... This script will download and set up a blast database with every run, which is computationally expensive and a large time delay for each run (and will quickly fill up your system with multiple blast databases which can be huge, 100s of GBs). For this reason,,, do not try this workflow with Gitpod (max 30GB).
+Third, you need to choose your environment profile. Use `-profile docker` for a local run with Docker, `-profile myriad` for UCL's Myriad cluster, `-profile cscluster` for the UCL CS cluster, or `-profile apptainer` for Apptainer.
+
+The final consideration is the database, described next.
+
+# The database
+
+The pipeline never downloads a database unless you ask it to. You must either point it to an existing database with `--predownloaded`, or explicitly ask for the NCBI nr download with `--downloaddb_800GB`. If you give neither, it stops straight away and tells you the options.
+
+| Database | Size on disk | How to use it |
+|----------|--------------|---------------|
+| An existing DIAMOND database, e.g. a shared `nr.dmnd` (**recommended**) | ~350 GB for nr built from NCBI's last nr FASTA (Feb 2024). No download. | `--predownloaded /path/to/nr.dmnd` |
+| NCBI nr, downloaded by the pipeline in BLAST format | **~393 GB download, ~755 GB on disk: you need about 800 GB free** | `--downloaddb_800GB` |
+| NCBI Swiss-Prot, for testing | ~225 MB download, ~0.7 GB on disk | `-profile test` |
+| NCBI taxonomy (`names.dmp`, `nodes.dmp`), always needed | ~80 MB download, ~540 MB on disk | `--names` and `--nodes` |
+
+Sizes are as of October 2026. NCBI nr roughly doubles every two years, so expect these to grow.
+
+## Option 1 (default): use an existing database
+
+Point `--predownloaded` at a DIAMOND database (`.dmnd`, or the folder containing `nr.dmnd`), and give the NCBI taxonomy files with `--names` and `--nodes`:
+
+```
+nextflow run main.nf -profile docker --proteins my_proteins.fa --predownloaded /shared/databases/nr.dmnd --names /shared/databases/names.dmp --nodes /shared/databases/nodes.dmp
+```
+
+Any `.dmnd` built with taxonomy works, including the `nr.dmnd` made by version 1 of this pipeline. On a cluster, the database just needs to be readable from the compute nodes; the containers mount it automatically, so a shared lab database works well.
+
+If you don't have the taxonomy files, download them (~80 MB):
+
+```
+wget https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdmp.zip
+unzip taxdmp.zip names.dmp nodes.dmp
+```
+
+`--predownloaded` also accepts an NCBI BLAST-format database folder, such as one downloaded by Option 2.
+
+## Option 2: download NCBI nr (~800 GB)
+
+Only if you have no database, add `--downloaddb_800GB`. The pipeline then downloads the latest NCBI `nr` database and the NCBI taxonomy:
+
+- It is ~393 GB to download (176 volumes) and ~755 GB once extracted, so you need **about 800 GB free**. Volumes are extracted one at a time, so you never need room for the archives and the extracted database at once.
+- It can take up to a day, depending on your internet speed.
+- Do not try this with Gitpod.
+
+NCBI no longer publishes an up-to-date nr FASTA (the last one is from February 2024), only the BLAST-format database. So that is what the pipeline downloads, and DIAMOND searches it directly without converting it to a `.dmnd`.
+
+To download a different NCBI protein database, add its name with `--blast_db`, for example `--downloaddb_800GB --blast_db swissprot` (see https://ftp.ncbi.nlm.nih.gov/blast/db/ for the list). Smaller databases need far less space than nr.
+
+The downloaded database is saved in `results/database/`:
+
+```
+results/database/blastdb/    the NCBI BLAST database (nr.*)
+results/database/names.dmp   NCBI taxonomy names
+results/database/nodes.dmp   NCBI taxonomy nodes
+```
+
+These are hard links to the files in the `work` directory, so they take no extra space. Move the `database` folder somewhere permanent (e.g. `blast_database`), then use it with Option 1 on later runs, so you never download it twice:
+
+```
+nextflow run main.nf -profile docker --proteins my_proteins.fa --predownloaded blast_database/blastdb --names blast_database/names.dmp --nodes blast_database/nodes.dmp
+```
+
+If you used `--blast_db` for the download, pass the same `--blast_db` again. If the hard links could not be made (for example when `work` and `results` are on different file systems), Nextflow prints a warning and you can find the same files in the `work` directory of the `DOWNLOAD` task instead.
+
+# Test the pipeline
+
+Before a big run, check everything works on your system with the built-in test. It downloads the small NCBI Swiss-Prot database (~225 MB, not nr) and runs every step on `Example.fasta`. It takes a few minutes:
+
+```
+nextflow run main.nf -profile test,docker
+```
+
+Results are written to `results_test/`.
 
 # Running the workflow on your data
 
 The basic command to run this workflow is the following:
 ```
-nextflow run main.nf -bg -resume -profile docker --nucleotide 'Example.fasta'
+nextflow run main.nf -bg -resume -profile docker --nucleotide Example.fasta --nucl_type basic --predownloaded /path/to/nr.dmnd --names /path/to/names.dmp --nodes /path/to/nodes.dmp
 ```
 
-This will run the whole pipeline on the (--nucleotide) file `Example.fasta`, using the docker profile, so you must have docker installed, `-bg` allows Nextflow to run in the background, so you can continue in the same terminal and `-resume` allows Nextflow to continue from the last working step in the pipeline. 
+This will run the whole pipeline on the (`--nucleotide`) file `Example.fasta` against your existing `nr.dmnd`, using the docker profile, so you must have docker installed. `-bg` allows Nextflow to run in the background, so you can continue in the same terminal and `-resume` allows Nextflow to continue from the last working step in the pipeline.
 
-WARNING: This pipeline could take up to a day depending on your internet speed etc. So is best to just leave it running in the background, while you do other things. If it takes longer, there may be an issue. Please create a new issue and let me know.
-
-Once you have run this for the first time, you should be able to find three key database files in the `work` directory of this run. Look for the hash key for the `DOWNLOAD`, there should be a key such as `\[11/9bd97d\] Submitted process > DOWNLOAD`(NOTE, your random hex code will be different),,,, with this you should be able to find the blast files, in ./work/11/9bd97d.............  (the dot stand for unknown rets of key, press tab to complete path, and in the folder, you should find: `nr.dmnd` `names.dmp` `nodes.dmp`. These you can now feed into the pipeline to prevent a repeat of the download step. I would download them into their own folder, called say `blast_database`
-
-With the locations of these files set, you can then run the pipeline a second time using these input files, as so:
-
-```
-nextflow run main.nf -bg -resume -profile docker --nucleotide Example.fasta --predownloaded blast_database/nr.dmnd --names blast_database/names.dmp --nodes results/nodes.dmp
-```
+On a Sun Grid Engine cluster, swap `-profile docker` for your cluster profile, e.g. `-profile myriad`.
 
 # All possible flags
 
-```
-params.proteins= false
-params.nucleotide = false
-params.predownloaded= false
-params.numhits = 1
-params.outdir = "results"
-params.names = false
-params.nodes = false
-params.level = "family"
-params.sensitivity= "fast"
-```
-To set any of these to custom values, use -- then the parameter name. e.g. `params.outdir = "results"`, you can use on the command line by adding this flag `--outdir "My_results_folder"`.
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--proteins` | | Protein fasta file(s) to search. |
+| `--nucleotide` | | Nucleotide transcript fasta file(s), translated with TransDecoder. |
+| `--nucl_type` | `trinity` | Header format of `--nucleotide` files: `trinity`, `ensembl` or `basic`. |
+| `--predownloaded` | | An existing database: a DIAMOND `.dmnd` file (or the folder containing `nr.dmnd`), or an NCBI BLAST database folder. |
+| `--downloaddb_800GB` | | Download the NCBI nr database instead (~393 GB download, ~755 GB on disk). Off unless you add it. |
+| `--blast_db` | `nr` | Which NCBI database `--downloaddb_800GB` downloads, or the database name inside a `--predownloaded` folder. |
+| `--names` | | `names.dmp` taxonomy file (needed with `--predownloaded`). |
+| `--nodes` | | `nodes.dmp` taxonomy file (needed with `--predownloaded`). |
+| `--numhits` | `1` | Number of blast hits to keep per sequence (diamond `--max-target-seqs`). |
+| `--tophits` | | Instead of `--numhits`, keep all hits within this percentage of the best hit's score (diamond `--top`). |
+| `--sensitivity` | `fast` | Diamond sensitivity mode, e.g. `fast`, `sensitive`, `more-sensitive`, `ultra-sensitive`. |
+| `--outdir` | `results` | Output folder. |
+| `--max_cpus` | `4` | Most CPUs any single step may use. |
+| `--max_memory` | `32.GB` | Most memory any single step may use. Lower this if your machine has less memory, e.g. `--max_memory 12.GB`. |
+| `--max_time` | `48.h` | Longest any single step may run. |
 
-By default the total number of blast hits per sequence is set to 1. You can change this with the flag `--numhits <NUMBER>`. 
+To set any of these, use `--` then the parameter name on the command line, e.g. `--outdir "My_results_folder"`.
 
 # Results
 
-Once completed, you should have a folder called `Results`, which contains the blast hits file in tab format, along with some PDF overviews of the taxonomy information of all the genes.
+Once completed, you should have a folder called `results`, which contains:
+
+- `Blast_results/`: the diamond hits for each input file in tab format (`*_results.tsv`, columns: query, subject, subject title, percent identity, e-value, subject phylum, subject taxonomy id) and the best hit per query (`*_top.tsv`).
+- `Taxo_figure/`: a PDF of pie charts summarising the taxonomy of the best hits at each rank (kingdom to subspecies).
+- `Taxo_summary/`: the counts behind each pie chart (`*_top.tsv_<rank>`), plus a per-gene summary of the phyla hit (`*_summary.tsv`).
+- `Prot/`: the proteins predicted by TransDecoder (only with `--nucleotide`).
+- `database/`: the downloaded database (only with `--downloaddb_800GB`).
 
 
-# ADMIN Section
-For testing blast etc, ():
-We can use the official diamond docker call:
+# Software
 
-docker pull buchfink/diamond:v2.0.13
+All tools run in pinned containers:
 
-Then run as docker run -it --rm buchfink/diamond 
+| Tool | Version | Container |
+|------|---------|-----------|
+| DIAMOND | 2.2.8 | `quay.io/biocontainers/diamond:2.2.8--he361c42_0` |
+| TransDecoder | 5.7.1 | `quay.io/biocontainers/transdecoder:5.7.1--pl5321hdfd78af_2` |
+| BLAST+ (database download) | 2.17.0 | `quay.io/biocontainers/blast:2.17.0--hb02a186_1` |
+| R / Perl (taxonomy plots) | 4.6.1 | `rocker/r-ver:4.6.1` |
 
-Test on docker:
-docker run -it --entrypoint /bin/bash --volume $PWD/Human_olfactory.fasta:/Human_olfactory.fasta buchfink/diamond 
-
-Replicate error with singularity on UCL cluster :
-singularity exec /your/dir/Scratch/.singularity/pull/buchfink-diamond.img /bin/bash -c "diamond makedb --in nr.gz -d database"
-
-
-This pipeline uses trandecoder is you supply Trinity.fasta output, in order to get the likely coding regions of each gene. This uses TransDecoder Release v5.5.0. Make sure to cite the webpage : https://github.com/TransDecoder/TransDecoder (As it is not in a journal)
+Please cite DIAMOND (Buchfink, Reuter & Drost, Nature Methods 2021) and TransDecoder (https://github.com/TransDecoder/TransDecoder, as it is not in a journal).
