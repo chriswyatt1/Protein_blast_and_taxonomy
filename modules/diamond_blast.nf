@@ -6,6 +6,7 @@ process DIAMOND_BLAST {
     input:
         path proteins
         path database
+        val db_name
         path nodes, stageAs: 'taxdump/nodes.dmp'
         path names, stageAs: 'taxdump/names.dmp'
 
@@ -16,14 +17,14 @@ process DIAMOND_BLAST {
     // --top (percentage range of the top score) overrides --max-target-seqs in diamond
     def hits = params.tophits ? "--top ${params.tophits}" : "--max-target-seqs ${params.numhits}"
     """
-    # The database is a diamond .dmnd file, a folder holding ${params.blast_db}.dmnd,
-    # or a folder holding the NCBI BLAST database ${params.blast_db} (taxonomy read from taxdump/)
+    # The database is a diamond .dmnd file, a folder holding ${db_name}.dmnd,
+    # or a folder holding the NCBI BLAST database ${db_name} (taxonomy read from taxdump/)
     if [ -f ${database} ]; then
         db_args="--db ${database}"
-    elif [ -f ${database}/${params.blast_db}.dmnd ]; then
-        db_args="--db ${database}/${params.blast_db}.dmnd"
+    elif [ -f ${database}/${db_name}.dmnd ]; then
+        db_args="--db ${database}/${db_name}.dmnd"
     else
-        db_args="--db ${database}/${params.blast_db} --taxdump taxdump"
+        db_args="--db ${database}/${db_name} --taxdump taxdump"
     fi
 
     diamond blastp --${params.sensitivity} ${hits} --query ${proteins} \$db_args --out ${proteins}_results.tsv --threads ${task.cpus} --outfmt 6 qseqid sseqid stitle pident evalue sphylums staxids

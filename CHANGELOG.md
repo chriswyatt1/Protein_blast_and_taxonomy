@@ -1,5 +1,20 @@
 # Changelog
 
+## v2.1.0 (unreleased)
+
+### Added
+
+- `--search_tool blastp`: search proteins with NCBI BLAST+ blastp against an NCBI BLAST protein database such as nr ([#5](https://github.com/chriswyatt1/Protein_blast_and_taxonomy/issues/5)).
+- `--search_tool blastn`: search nucleotide transcripts (longest per gene, published to `results/Nucl/`) with NCBI BLAST+ blastn against an NCBI nucleotide database, `core_nt` by default ([#6](https://github.com/chriswyatt1/Protein_blast_and_taxonomy/issues/6)).
+- NCBI BLAST output gets the same columns as diamond (a phylum column is added from the NCBI taxonomy), so the taxonomy plots and summaries work unchanged.
+- `--downloaddb_800GB` can download nucleotide databases, and prints the size of the database before downloading it.
+- `-profile test` accepts `--search_tool blastp` or `--search_tool blastn`.
+
+### Changed
+
+- `--blast_db` defaults to `core_nt` with `--search_tool blastn` (still `nr` otherwise).
+- The run stops straight away for options that can't work together: `--search_tool blastn` without `--nucleotide`, `--tophits` with NCBI BLAST, or NCBI BLAST with a `.dmnd` database.
+
 ## v2.0.0 (2026-10-06)
 
 ### Breaking changes
