@@ -158,24 +158,16 @@ To set any of these, use `--` then the parameter name on the command line, e.g. 
 
 # Results
 
-Once completed, you should have a folder called `results`, which contains:
+Once completed, the results folder (`results/` unless you set `--outdir`) contains:
 
-- `report/Protein_blast_and_taxonomy_multiqc_report.html`: **start here.** A report (made with [MultiQC](https://multiqc.info)) of the whole run:
-  - run information: pipeline and Nextflow versions, the command, the search tool and its settings, and the database;
-  - the database: its location, type, size and date, and the NCBI taxonomy files used;
-  - a search summary for each input file: sequences searched, how many found a hit, how many top hits are ≥95% identical (usually the same or a very closely related species) and how many of those also cover ≥90% of the sequence, the median identity and coverage, the number of phyla, genera and species hit, and (with `--expected_taxon`) how many top hits are outside the expected taxon;
-  - interactive bar charts of the identity and the query coverage of the top hits (including sequences with no hit), and of the phylum and genus of the top hits;
-  - with `--expected_taxon`, a chart of the top hits within and outside the expected taxon;
-  - the taxonomy pie chart figure;
-  - the versions of the main software used (DIAMOND or BLAST+, TransDecoder, R, Nextflow).
-- `Blast_results/`: the blast hits for each input file in tab format (`*_results.tsv`, columns: query, subject, subject title, percent identity, e-value, subject phylum, query coverage (%), subject taxonomy id) and the best hit per query (`*_top.tsv`).
-- `Taxo_figure/`: pie charts summarising the taxonomy of the best hits at each rank (kingdom to subspecies), as a PDF and a PNG.
-- `Taxo_summary/`: the counts behind each pie chart (`*_top.tsv_<rank>`, columns: taxon, count), plus a per-gene summary of the phyla hit (`*_summary.tsv`) and, with `--expected_taxon`, the top hits outside the expected taxon (`*_outside_expected_taxon.tsv`).
-- `Prot/`: the proteins predicted by TransDecoder (only with `--nucleotide`, for diamond and blastp).
-- `Nucl/`: the longest transcript per gene that was searched (only with `--search_tool blastn`).
-- `database/`: the downloaded database (only with `--downloaddb_800GB`).
-- `pipeline_info/`: the software versions used (`Protein_blast_and_taxonomy_software_mqc_versions.yml`).
+- `report/Protein_blast_and_taxonomy_multiqc_report.html`: **start here.** A report of the whole run: the database and software versions used, how many sequences found a hit, how similar and complete the top hits are, the contamination check (with `--expected_taxon`), and the taxonomy of the top hits.
+- `Blast_results/`: the blast hits for each input file.
+- `Taxo_figure/` and `Taxo_summary/`: pie charts and tables of the taxonomy of each sequence's top hit.
+- `Prot/` or `Nucl/`: the sequences searched, when the input is nucleotides.
+- `database/`: the downloaded database (with `--downloaddb_800GB`).
+- `pipeline_info/`: the software versions used.
 
+Every file, and every column of the blast results, is described in [docs/output.md](docs/output.md). A copy is saved in the results folder as `README.md`.
 
 # Software
 

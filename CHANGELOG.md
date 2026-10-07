@@ -2,6 +2,21 @@
 
 The format follows the [nf-core](https://nf-co.re/) changelog style.
 
+## [[v2.2.1](https://github.com/chriswyatt1/Protein_blast_and_taxonomy/releases/tag/v2.2.1)] - 2026-10-07
+
+### Credits
+
+- [Chris Wyatt](https://github.com/chriswyatt1)
+
+### `Added`
+
+- `docs/output.md`: a guide to every output file and the columns of the blast results. A copy is saved in the results folder as `README.md`.
+
+### `Fixed`
+
+- `Blast_results/<input>_results.tsv_top.tsv` was the same as `<input>_results.tsv` with the default `--numhits 1`. It is now only written when more than one hit is kept per sequence (`--numhits` above 1, or `--tophits`).
+- `Blast_results/` no longer contains `database_info_mqc.html`, a file only meant for the report.
+
 ## [[v2.2.0](https://github.com/chriswyatt1/Protein_blast_and_taxonomy/releases/tag/v2.2.0)] - 2026-10-06
 
 ### Credits

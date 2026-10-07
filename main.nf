@@ -185,6 +185,10 @@ workflow {
 		.collect()
 	MULTIQC ( report_files , file("${projectDir}/assets/multiqc_config.yml", checkIfExists: true) )
 
+	// Save the guide to the output files in the results folder
+	channel.fromPath("${projectDir}/docs/output.md", checkIfExists: true)
+		.collectFile(name: 'README.md', storeDir: params.outdir)
+
 	workflow.onComplete = {
 		println ( workflow.success ? "\nDone! Results are in --> $params.outdir (report: $params.outdir/report/Protein_blast_and_taxonomy_multiqc_report.html)\n" : "Hmmm .. something went wrong" )
 	}
