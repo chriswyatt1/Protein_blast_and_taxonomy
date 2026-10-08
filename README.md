@@ -145,7 +145,7 @@ Pick a broad enough taxon (e.g. the class or order): genes whose closest relativ
 | `--blast_db` | `nr` (`core_nt` for blastn) | Which NCBI database `--downloaddb_800GB` downloads, or the database name inside a `--predownloaded` folder. |
 | `--names` | | `names.dmp` taxonomy file (needed with `--predownloaded`). |
 | `--nodes` | | `nodes.dmp` taxonomy file (needed with `--predownloaded`). |
-| `--numhits` | `1` | Number of blast hits to keep per sequence (`--max-target-seqs` / `-max_target_seqs`). |
+| `--numhits` | `100` | Number of blast hits to keep per sequence (`--max-target-seqs` / `-max_target_seqs`). The taxonomy plots and report use each sequence's best hit (lowest e-value). |
 | `--tophits` | | Diamond only. Instead of `--numhits`, keep all hits within this percentage of the best hit's score (diamond `--top`). |
 | `--sensitivity` | `fast` | Diamond only. Sensitivity mode, e.g. `fast`, `sensitive`, `more-sensitive`, `ultra-sensitive`. |
 | `--expected_taxon` | | The taxon you sequenced (NCBI name or taxid), for the [contamination check](#contamination-check). |

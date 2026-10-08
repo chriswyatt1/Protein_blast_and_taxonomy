@@ -28,7 +28,7 @@ File names start with the name of your input file. When nucleotide input is tran
 
 ## Blast_results/
 
-- `<input>_results.tsv`: every hit kept for each sequence (`--numhits` per sequence, 1 by default). Sequences with no hit are not listed. Tab-separated, with no header line. The columns are:
+- `<input>_results.tsv`: every hit kept for each sequence (up to `--numhits` per sequence, 100 by default), best first. Sequences with no hit are not listed. Tab-separated, with no header line. The columns are:
 
   | Column | Content |
   |--------|---------|
@@ -41,7 +41,7 @@ File names start with the name of your input file. When nucleotide input is tran
   | 7 | Query coverage: % of your sequence covered by the alignment |
   | 8 | Subject NCBI taxonomy id (several are separated by `;`) |
 
-- `<input>_results.tsv_top.tsv`: one line per sequence, its hit with the highest percent identity. Same columns as above. It is only written when more than one hit is kept per sequence (`--numhits` above 1, or `--tophits`). With the default of one hit, it would be the same as `<input>_results.tsv`.
+- `<input>_results.tsv_top.tsv`: one line per sequence, its best hit (the lowest e-value). Same columns as above. It is not written with `--numhits 1`, where it would be the same as `<input>_results.tsv`.
 
 The taxonomy files below are all made from each sequence's top hit.
 
@@ -52,7 +52,7 @@ The taxonomy files below are all made from each sequence's top hit.
 ## Taxo_summary/
 
 - `<input>_results.tsv_top.tsv_<rank>` (one file per rank, kingdom to subspecies): how many top hits belong to each taxon at that rank, most common first. Two columns: the taxon, and the count.
-- `<input>_results.tsv_summary.tsv`: one line per sequence, listing the phyla of all its hits, each with the average percent identity and the number of hits, e.g. `gene1	Arthropoda (64.00 of 1)`.
+- `<input>_results.tsv_summary.tsv`: one line per sequence, listing the phyla of all its hits, each with the average percent identity and the number of hits. For example, `gene1	Arthropoda (64.20 of 87)	Chordata (41.50 of 13)` means 87 of gene1's hits are to arthropods. A gene whose hits are split across distant phyla may be worth a closer look.
 - `<input>_outside_expected_taxon.tsv` (`--expected_taxon` only): the top hits outside the expected taxon, which may be contamination. It has a header line, the same columns as `<input>_results.tsv`, and a last column with the domain / phylum of the hit.
 
 ## Prot/
