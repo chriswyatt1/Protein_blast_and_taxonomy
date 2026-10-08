@@ -1,7 +1,7 @@
 process DIAMOND_BLAST {
     label 'blast'
     container 'quay.io/biocontainers/diamond:2.2.8--he361c42_0'
-    publishDir "$params.outdir/Blast_results/", mode:'copy'
+    publishDir "$params.outdir/Blast_results/", mode:'copy', pattern: '*_results.tsv'
 
     input:
         path proteins

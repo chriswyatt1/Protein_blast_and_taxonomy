@@ -1,7 +1,7 @@
 process NCBI_BLAST {
     label 'blast'
     container 'quay.io/biocontainers/blast:2.17.0--hb02a186_1'
-    publishDir "$params.outdir/Blast_results/", mode:'copy'
+    publishDir "$params.outdir/Blast_results/", mode:'copy', pattern: '*_results.tsv'
 
     input:
         path query

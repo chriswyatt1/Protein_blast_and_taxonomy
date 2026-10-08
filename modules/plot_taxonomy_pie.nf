@@ -1,7 +1,8 @@
 process PLOT_PIE {
     label 'perl_pie'
     container 'rocker/r-ver:4.6.1'
-    publishDir "$params.outdir/Blast_results/", mode:'copy', pattern: '*_top.tsv'
+    // The best hit per sequence only differs from the full results when several hits are kept per sequence
+    publishDir "$params.outdir/Blast_results/", mode:'copy', pattern: '*_top.tsv', enabled: params.tophits || (params.numhits as int) > 1
     publishDir "$params.outdir/Taxo_figure/", mode:'copy', pattern: '*.{pdf,png}'
     publishDir "$params.outdir/Taxo_summary/", mode:'copy', pattern: '*_{summary,outside_expected_taxon}.tsv'
     publishDir "$params.outdir/Taxo_summary/", mode:'copy', pattern: '*_top.tsv_{kingdom,phylum,class,order,family,genus,species,subspecies}'

@@ -2,6 +2,26 @@
 
 The format follows the [nf-core](https://nf-co.re/) changelog style.
 
+## [[v2.3.0](https://github.com/chriswyatt1/Protein_blast_and_taxonomy/releases/tag/v2.3.0)] - 2026-10-08
+
+### Credits
+
+- [Chris Wyatt](https://github.com/chriswyatt1)
+
+### `Added`
+
+- `docs/output.md`: a guide to every output file and the columns of the blast results. A copy is saved in the results folder as `README.md`.
+
+### `Changed`
+
+- **`--numhits` now defaults to 100 (was 1)**, so `<input>_results.tsv` keeps up to 100 hits per sequence, and the per-gene phylum summary (`Taxo_summary/<input>_results.tsv_summary.tsv`) shows how a gene's hits are spread across phyla. The results files are larger (about 20 times on the test data). Use `--numhits 1` for the previous behaviour.
+- **The top hit of each sequence is now its best hit (lowest e-value)**, not the hit with the highest percent identity. This only matters with more than one hit per sequence. On the test data with 100 hits, the best hit is the same as the single hit from `--numhits 1` for all 341 sequences, so the taxonomy plots and report don't change. Picking by identity instead would have changed 142 of them, mostly to short partial matches (median coverage 45% vs 88%).
+
+### `Fixed`
+
+- `Blast_results/<input>_results.tsv_top.tsv` was the same as `<input>_results.tsv` with `--numhits 1`. It is no longer written in that case.
+- `Blast_results/` no longer contains `database_info_mqc.html`, a file only meant for the report.
+
 ## [[v2.2.0](https://github.com/chriswyatt1/Protein_blast_and_taxonomy/releases/tag/v2.2.0)] - 2026-10-06
 
 ### Credits
