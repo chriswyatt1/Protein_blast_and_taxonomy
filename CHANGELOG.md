@@ -2,6 +2,22 @@
 
 The format follows the [nf-core](https://nf-co.re/) changelog style.
 
+## [[v2.4.1](https://github.com/chriswyatt1/Protein_blast_and_taxonomy/releases/tag/v2.4.1)] - 2026-10-09
+
+### Credits
+
+- [Chris Wyatt](https://github.com/chriswyatt1)
+
+### `Fixed`
+
+- `-profile myriad`: the search jobs asked for far more than they need, so they could wait a long time in Myriad's queue:
+  - **80 GB of memory:** Myriad's `-l mem` is per core, so `-l mem=20G` with 4 cores is 80 GB.
+  - **200 GB of local disk**, which the searches don't use.
+  - **Two different wall-times** (8 h and 48 h).
+
+  The profile now follows nf-core's `ucl_myriad` config: every job asks for its memory divided by its cores, and the searches (DIAMOND or NCBI BLAST) ask for 8 cores with 3 GB each (24 GB) for up to 48 h.
+- `-profile myriad` caches Singularity images in `~/Scratch/.apptainer/pull`, and uses the same Singularity options as nf-core's `ucl_myriad` profile.
+
 ## [[v2.4.0](https://github.com/chriswyatt1/Protein_blast_and_taxonomy/releases/tag/v2.4.0)] - 2026-10-09
 
 ### Credits
