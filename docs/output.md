@@ -23,7 +23,8 @@ File names start with the name of your input file. When nucleotide input is tran
   - charts of the identity and coverage of the top hits, and of their phylum and genus;
   - the contamination check (`--expected_taxon` only);
   - the taxonomy pie charts;
-  - the software versions.
+  - the software versions;
+  - a methods description for a publication: text describing this run, a table of every parameter value, and the references for the tools and data used.
 - `Protein_blast_and_taxonomy_multiqc_report_data/`: the tables behind the report as text files, e.g. `multiqc_search_summary_table.txt`.
 
 ## Blast_results/
@@ -75,3 +76,4 @@ These are hard links to the files in Nextflow's `work` folder, so they take no e
 ## pipeline_info/
 
 - `Protein_blast_and_taxonomy_software_mqc_versions.yml`: the versions of the main software used by each step, and of Nextflow and the pipeline.
+- `Protein_blast_and_taxonomy_methods_description.html`: the report's methods description as a web page, to copy into a publication.

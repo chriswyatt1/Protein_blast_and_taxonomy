@@ -169,6 +169,14 @@ Once completed, the results folder (`results/` unless you set `--outdir`) contai
 
 Every file, and every column of the blast results, is described in [docs/output.md](docs/output.md). A copy is saved in the results folder as `README.md`.
 
+# Citations
+
+If you use this pipeline, please cite the version you used:
+
+> Wyatt, C. Protein_blast_and_taxonomy, version <version>. https://github.com/chriswyatt1/Protein_blast_and_taxonomy/releases/tag/v<version>
+
+For your methods section, the report of each run has a **Methods description** section: text describing that run (the software versions, database, taxonomy and settings used), a table of every parameter value, and the references for the tools and data used. A copy is saved in `pipeline_info/Protein_blast_and_taxonomy_methods_description.html`. All the tools and data the pipeline can use are listed in [CITATIONS.md](CITATIONS.md).
+
 # Software
 
 All tools run in pinned containers:
@@ -181,4 +189,4 @@ All tools run in pinned containers:
 | R / Perl (taxonomy plots) | 4.6.1 | `rocker/r-ver:4.6.1` |
 | MultiQC (report) | 1.35 | `quay.io/biocontainers/multiqc:1.35--pyhdfd78af_2` |
 
-Please cite DIAMOND (Buchfink, Reuter & Drost, Nature Methods 2021) or BLAST+ (Camacho et al., BMC Bioinformatics 2009), MultiQC (Ewels et al., Bioinformatics 2016), and TransDecoder (https://github.com/TransDecoder/TransDecoder, as it is not in a journal).
+See [Citations](#citations) for how to cite them.

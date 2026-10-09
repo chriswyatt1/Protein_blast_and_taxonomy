@@ -13,6 +13,7 @@ process DIAMOND_BLAST {
     output:
         path("*_results.tsv") , emit: blast_hits
         path("database_info_mqc.html") , emit: db_info
+        path("database_info.tsv") , emit: db_details
         tuple val("${task.process}"), val('diamond'), eval("diamond version | sed 's/^diamond version //'"), emit: versions_diamond, topic: versions
 
     script:

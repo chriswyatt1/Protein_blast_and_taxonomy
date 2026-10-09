@@ -21,7 +21,6 @@ params.numhits = 100
 params.tophits = false
 params.sensitivity= "fast"
 params.expected_taxon = false
-params.level = "family"
 params.outdir = "results"
 
 //================================================================================
@@ -39,6 +38,155 @@ include { MULTIQC } from './modules/multiqc.nf'
 // Make text safe to show in the HTML report
 def escapeHtml(text) {
 	return text.toString().replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+}
+
+// Numbers such as 487728 shown as 487,728
+def formatCount(number) {
+	return number ? String.format('%,d', number.toString() as long) : 'an unknown number of'
+}
+
+// In-text citation and reference for each tool and database the methods description can mention
+def methodsReferences() {
+	return [
+		diamond: [
+			cite: '<a href="https://doi.org/10.1038/s41592-021-01101-x">Buchfink <em>et al.</em>, 2021</a>',
+			ref: 'Buchfink, B., Reuter, K., & Drost, H.-G. (2021). Sensitive protein alignments at tree-of-life scale using DIAMOND. Nature Methods, 18(4), 366–368. doi: <a href="https://doi.org/10.1038/s41592-021-01101-x">10.1038/s41592-021-01101-x</a>'
+		],
+		blast: [
+			cite: '<a href="https://doi.org/10.1186/1471-2105-10-421">Camacho <em>et al.</em>, 2009</a>',
+			ref: 'Camacho, C., Coulouris, G., Avagyan, V., Ma, N., Papadopoulos, J., Bealer, K., & Madden, T. L. (2009). BLAST+: architecture and applications. BMC Bioinformatics, 10, 421. doi: <a href="https://doi.org/10.1186/1471-2105-10-421">10.1186/1471-2105-10-421</a>'
+		],
+		transdecoder: [
+			cite: '<a href="https://github.com/TransDecoder/TransDecoder">Haas, TransDecoder</a>',
+			ref: 'Haas, B. J. TransDecoder. <a href="https://github.com/TransDecoder/TransDecoder">https://github.com/TransDecoder/TransDecoder</a>'
+		],
+		r: [
+			cite: 'R Core Team, 2026',
+			ref: 'R Core Team (2026). R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. <a href="https://www.R-project.org/">https://www.R-project.org/</a>'
+		],
+		multiqc: [
+			cite: '<a href="https://doi.org/10.1093/bioinformatics/btw354">Ewels <em>et al.</em>, 2016</a>',
+			ref: 'Ewels, P., Magnusson, M., Lundin, S., & Käller, M. (2016). MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics, 32(19), 3047–3048. doi: <a href="https://doi.org/10.1093/bioinformatics/btw354">10.1093/bioinformatics/btw354</a>'
+		],
+		taxonomy: [
+			cite: '<a href="https://doi.org/10.1093/database/baaa062">Schoch <em>et al.</em>, 2020</a>',
+			ref: 'Schoch, C. L., Ciufo, S., Domrachev, M., Hotton, C. L., Kannan, S., Khovanskaya, R., Leipe, D., Mcveigh, R., O’Neill, K., Robbertse, B., Sharma, S., Soussov, V., Sullivan, J. P., Sun, L., Turner, S., & Karsch-Mizrachi, I. (2020). NCBI Taxonomy: a comprehensive update on curation, resources and tools. Database, 2020, baaa062. doi: <a href="https://doi.org/10.1093/database/baaa062">10.1093/database/baaa062</a>'
+		],
+		ncbi: [
+			cite: '<a href="https://doi.org/10.1093/nar/gkaf1060">Sayers <em>et al.</em>, 2026</a>',
+			ref: 'Sayers, E. W., Bolton, E. E., Fine, A. M., Kelly, C., Kim, S., Landrum, M., Lathrop, S., Malheiro, A., Murphy, T. D., Phan, L., Pujar, S., Trawick, B. W., Schneider, V. A., & Pruitt, K. D. (2026). Database resources of the National Center for Biotechnology Information in 2026. Nucleic Acids Research, 54(D1), D20–D27. doi: <a href="https://doi.org/10.1093/nar/gkaf1060">10.1093/nar/gkaf1060</a>'
+		],
+		uniprot: [
+			cite: '<a href="https://doi.org/10.1093/nar/gkae1010">The UniProt Consortium, 2025</a>',
+			ref: 'The UniProt Consortium (2025). UniProt: the Universal Protein Knowledgebase in 2025. Nucleic Acids Research, 53(D1), D609–D617. doi: <a href="https://doi.org/10.1093/nar/gkae1010">10.1093/nar/gkae1010</a>'
+		],
+		docker: [
+			cite: 'Merkel, 2014',
+			ref: 'Merkel, D. (2014). Docker: lightweight Linux containers for consistent development and deployment. Linux Journal, 2014(239), 2.'
+		],
+		singularity: [
+			cite: '<a href="https://doi.org/10.1371/journal.pone.0177459">Kurtzer <em>et al.</em>, 2017</a>',
+			ref: 'Kurtzer, G. M., Sochat, V., & Bauer, M. W. (2017). Singularity: Scientific containers for mobility of compute. PLOS ONE, 12(5), e0177459. doi: <a href="https://doi.org/10.1371/journal.pone.0177459">10.1371/journal.pone.0177459</a>'
+		]
+	]
+}
+
+// In-text citation, remembering which references to list
+def cite(references, used, key) {
+	if ( !used.contains(key) ) {
+		used.add(key)
+	}
+	return references[key].cite
+}
+
+// The report's methods description, as nf-core pipelines provide, from assets/methods_description_template.yml.
+// It is written for this run (tools and versions used, settings, database and taxonomy), so it can go in a publication.
+def methodsDescriptionText(template, versions_file, database_file, search_tool, blast_db) {
+	def references = methodsReferences()
+	def used = []
+	// "  tool: version" lines of the collated versions file
+	def versions = versions_file.readLines()
+		.findAll { line -> line.startsWith('  ') }
+		.collectEntries { line -> [ (line.trim().tokenize(':')[0]): line.trim().substring(line.trim().indexOf(':') + 1).trim() ] }
+	// "key<tab>value" lines written by database_info.sh
+	def db = database_file.readLines()
+		.collectEntries { line -> [ (line.tokenize('\t')[0]): line.contains('\t') ? line.substring(line.indexOf('\t') + 1) : '' ] }
+
+	def release_url = "https://github.com/chriswyatt1/Protein_blast_and_taxonomy/releases/tag/v${workflow.manifest.version}"
+	def doi = workflow.manifest.doi ? workflow.manifest.doi.toString().replace('https://doi.org/', '').trim() : ''
+	def doi_link = doi ? "doi: <a href=\"https://doi.org/${doi}\">${doi}</a>" : ''
+	def engine = workflow.containerEngine
+	def engine_text = engine == 'docker' ? ", run with Docker (${cite(references, used, 'docker')})"
+		: engine == 'singularity' ? ", run with Singularity (${cite(references, used, 'singularity')})"
+		: engine == 'apptainer' ? ", run with Apptainer, formerly Singularity (${cite(references, used, 'singularity')})"
+		: ""
+
+	def sentences = []
+	sentences.add("Sequences were analysed with Protein_blast_and_taxonomy v${workflow.manifest.version} (<a href=\"${release_url}\">${doi ? doi_link : release_url}</a>) using Nextflow v${workflow.nextflow.version} (<a href=\"https://doi.org/10.1038/nbt.3820\">Di Tommaso <em>et al.</em>, 2017</a>), with software containers from the Bioconda (<a href=\"https://doi.org/10.1038/s41592-018-0046-7\">Grüning <em>et al.</em>, 2018</a>) and BioContainers (<a href=\"https://doi.org/10.1093/bioinformatics/btx192\">da Veiga Leprevost <em>et al.</em>, 2017</a>) projects${engine_text}.")
+
+	// Input
+	def nucleotide_input = !params.proteins && params.nucleotide
+	def gene_text = params.nucl_type == 'trinity' ? "the longest transcript of each gene was kept (genes taken from the Trinity sequence names, without the isoform suffix)"
+		: params.nucl_type == 'ensembl' ? "the longest transcript of each gene was kept (genes taken from the Ensembl gene identifiers in the sequence names)"
+		: "all transcripts were used"
+	if ( nucleotide_input && search_tool != 'blastn' ) {
+		sentences.add("For each nucleotide input, ${gene_text}, and open reading frames encoding at least 100 amino acids were predicted with TransDecoder.LongOrfs from TransDecoder v${versions.transdecoder} (${cite(references, used, 'transdecoder')}).")
+	}
+	else if ( nucleotide_input ) {
+		sentences.add("For each nucleotide input, ${gene_text}.")
+	}
+
+	// Search
+	def db_text
+	def database_note = ''
+	if ( db.Title ) {
+		def db_reference = ( blast_db == 'swissprot' || db.Title.contains('SwissProt') ) ? cite(references, used, 'uniprot') : cite(references, used, 'ncbi')
+		db_text = "the NCBI ${escapeHtml(blast_db)} BLAST database (${escapeHtml(db.Title)}${db.Date ? ", version of ${db.Date}" : ''}, ${formatCount(db.Sequences)} sequences; ${db_reference})"
+	}
+	else {
+		db_text = "a DIAMOND database (${escapeHtml(file(db.Location).name)}, ${formatCount(db.Sequences)} sequences)"
+		database_note = "<li>A DIAMOND database does not record where its sequences came from: add the source and version of <code>${escapeHtml(file(db.Location).name)}</code> (e.g. NCBI nr, downloaded on a given date) to the text, with its reference.</li>"
+	}
+	def query_text = search_tool == 'blastn' ? "The transcripts" : nucleotide_input ? "The predicted proteins" : "Protein sequences"
+	def hits_text = ( params.tophits && search_tool == 'diamond' ) ? "keeping all hits within ${params.tophits}% of the best hit's score (--top ${params.tophits})"
+		: "keeping up to ${params.numhits} hits per sequence (${search_tool == 'diamond' ? '--max-target-seqs' : '-max_target_seqs'} ${params.numhits})"
+	if ( search_tool == 'diamond' ) {
+		sentences.add("${query_text} were searched against ${db_text} with DIAMOND v${versions.diamond} blastp (${cite(references, used, 'diamond')}) in --${params.sensitivity} mode, ${hits_text}.")
+	}
+	else {
+		def program = search_tool == 'blastn' ? 'blastn (megablast)' : 'blastp'
+		sentences.add("${query_text} were searched against ${db_text} with NCBI BLAST+ v${versions.blast} ${program} (${cite(references, used, 'blast')}), ${hits_text}.")
+	}
+
+	// Taxonomy and report
+	sentences.add("Hits were assigned to taxa with the NCBI Taxonomy (${cite(references, used, 'taxonomy')})${db['Taxonomy date'] ? ", using taxonomy files dated ${db['Taxonomy date']}" : ''}. The best hit of each sequence (lowest e-value) was used to summarise the taxonomy of the hits from kingdom to subspecies, with pie charts drawn in R v${versions['r-base']} (${cite(references, used, 'r')}).")
+	if ( params.expected_taxon ) {
+		sentences.add("To flag possible contamination, sequences whose best hit was outside ${escapeHtml(params.expected_taxon)} were counted and grouped by domain and phylum.")
+	}
+	sentences.add("The results were summarised in a report made with MultiQC (${cite(references, used, 'multiqc')}).")
+
+	def parameter_rows = params.keySet().sort().collect { name -> "<tr><td><code>--${name}</code></td><td>${escapeHtml(params.get(name))}</td></tr>" }.join('')
+
+	def meta = [
+		pipeline_version: workflow.manifest.version,
+		pipeline_link: doi ? doi_link : "<a href=\"${release_url}\">${release_url}</a>",
+		methods_text: sentences.join(' '),
+		command_line: escapeHtml(workflow.commandLine),
+		parameters_table: "<table class=\"table table-condensed\"><thead><tr><th>Parameter</th><th>Value</th></tr></thead><tbody>${parameter_rows}</tbody></table>",
+		tool_bibliography: used.collect { key -> "<li>${references[key].ref}</li>" }.join(' '),
+		nodoi_text: doi ? '' : "<li>This version of the pipeline has no DOI: cite it by its release, <a href=\"${release_url}\">${release_url}</a>.</li>",
+		database_note: database_note
+	]
+	return new groovy.text.SimpleTemplateEngine().createTemplate(template.text).make(meta).toString()
+}
+
+// The methods description as a web page, to copy into a publication
+def methodsHtmlPage(methods_yaml) {
+	def html = methods_yaml.substring(methods_yaml.indexOf('data: |') + 'data: |'.length())
+		.readLines()
+		.collect { line -> line.startsWith('  ') ? line.substring(2) : line }
+		.join('\n')
+	return "<!DOCTYPE html>\n<html><head><meta charset=\"utf-8\"><title>Protein_blast_and_taxonomy methods description</title></head><body>\n${html}\n</body></html>\n".toString()
 }
 
 workflow {
@@ -127,15 +275,18 @@ workflow {
 
 	def blast_hits
 	def database_info
+	def database_details
 	if ( search_tool == "diamond" ){
 		DIAMOND_BLAST ( input_queries , input_database , blast_db , input_nodes , input_names )
 		blast_hits = DIAMOND_BLAST.out.blast_hits
 		database_info = DIAMOND_BLAST.out.db_info
+		database_details = DIAMOND_BLAST.out.db_details
 	}
 	else{
 		NCBI_BLAST ( input_queries , input_database , blast_db , search_tool , input_nodes , input_names )
 		blast_hits = NCBI_BLAST.out.blast_hits
 		database_info = NCBI_BLAST.out.db_info
+		database_details = NCBI_BLAST.out.db_details
 	}
 
 	// Pair each query file with its hits, so the report can count the sequences searched
@@ -178,10 +329,19 @@ workflow {
 		"</dl>"
 	].join("\n")
 
+	// Methods description for a publication: in the report, and as a page in pipeline_info
+	def methods_description = versions_yml
+		.combine( database_details.first() )
+		.map { versions, database -> methodsDescriptionText(file("${projectDir}/assets/methods_description_template.yml", checkIfExists: true), versions, database, search_tool, blast_db) }
+	methods_description
+		.map { methods_yaml -> methodsHtmlPage(methods_yaml) }
+		.collectFile( name: 'Protein_blast_and_taxonomy_methods_description.html', storeDir: "${params.outdir}/pipeline_info" )
+
 	def report_files = PLOT_PIE.out.mqc.flatten()
 		.mix( database_info.first() )
 		.mix( channel.of(run_info_html).collectFile(name: 'run_info_mqc.html') )
 		.mix( versions_yml )
+		.mix( methods_description.collectFile(name: 'methods_description_mqc.yaml') )
 		.collect()
 	MULTIQC ( report_files , file("${projectDir}/assets/multiqc_config.yml", checkIfExists: true) )
 

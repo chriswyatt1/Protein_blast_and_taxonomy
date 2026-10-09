@@ -2,6 +2,27 @@
 
 The format follows the [nf-core](https://nf-co.re/) changelog style.
 
+## [[v2.4.0](https://github.com/chriswyatt1/Protein_blast_and_taxonomy/releases/tag/v2.4.0)] - 2026-10-09
+
+### Credits
+
+- [Chris Wyatt](https://github.com/chriswyatt1)
+
+### `Added`
+
+- A **Methods description** section in the report, as nf-core pipelines have (`assets/methods_description_template.yml`), written for each run so it can be used in a publication:
+  - methods text giving the pipeline and Nextflow versions, the input processing, the search tool with its version and settings, the database (title, release date and number of sequences), the NCBI Taxonomy files used, and the contamination check;
+  - the command, and a table of every parameter value (including those set in config files and profiles);
+  - references for the pipeline version and for the tools and data used in the run.
+
+  A copy is saved as `pipeline_info/Protein_blast_and_taxonomy_methods_description.html`.
+- `CITATIONS.md`, listing all the tools and data the pipeline can use, and a Citations section in the README.
+- `manifest.doi` in `nextflow.config`: once a release has a Zenodo DOI, set it here and the methods description cites it.
+
+### `Removed`
+
+- The `--level` parameter, which has not been used since v1.
+
 ## [[v2.3.0](https://github.com/chriswyatt1/Protein_blast_and_taxonomy/releases/tag/v2.3.0)] - 2026-10-08
 
 ### Credits

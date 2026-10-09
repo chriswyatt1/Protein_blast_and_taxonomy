@@ -14,6 +14,7 @@ process NCBI_BLAST {
     output:
         path("*_results.tsv") , emit: blast_hits
         path("database_info_mqc.html") , emit: db_info
+        path("database_info.tsv") , emit: db_details
         tuple val("${task.process}"), val('blast'), eval("${program} -version | head -1 | sed 's/^.*: //'"), emit: versions_blast, topic: versions
 
     script:
