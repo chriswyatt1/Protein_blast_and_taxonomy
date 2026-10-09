@@ -1,0 +1,30 @@
+id: "Protein_blast_and_taxonomy-methods-description"
+description: "Suggested text and references for the methods section of a publication, filled in for this run. A copy is saved as pipeline_info/Protein_blast_and_taxonomy_methods_description.html."
+section_name: "Methods description"
+section_href: "https://github.com/chriswyatt1/Protein_blast_and_taxonomy"
+plot_type: "html"
+## Rendered by methodsDescriptionText() in main.nf. Inserted values must be single lines, to keep the YAML block below valid.
+data: |
+  <h4>Methods</h4>
+  <p>${methods_text}</p>
+  <p>The pipeline was run with the following command:</p>
+  <pre><code>${command_line}</code></pre>
+  <h4>Parameters</h4>
+  <p>All parameter values used in this run, including any set in config files or profiles:</p>
+  ${parameters_table}
+  <h4>References</h4>
+  <ul>
+    <li>Wyatt, C. Protein_blast_and_taxonomy, version ${pipeline_version}. ${pipeline_link}</li>
+    <li>Di Tommaso, P., Chatzou, M., Floden, E. W., Barja, P. P., Palumbo, E., & Notredame, C. (2017). Nextflow enables reproducible computational workflows. Nature Biotechnology, 35(4), 316–319. doi: <a href="https://doi.org/10.1038/nbt.3820">10.1038/nbt.3820</a></li>
+    <li>Grüning, B., Dale, R., Sjödin, A., Chapman, B. A., Rowe, J., Tomkins-Tinch, C. H., Valieris, R., Köster, J., & Bioconda Team. (2018). Bioconda: sustainable and comprehensive software distribution for the life sciences. Nature Methods, 15(7), 475–476. doi: <a href="https://doi.org/10.1038/s41592-018-0046-7">10.1038/s41592-018-0046-7</a></li>
+    <li>da Veiga Leprevost, F., Grüning, B. A., Alves Aflitos, S., Röst, H. L., Uszkoreit, J., Barsnes, H., Vaudel, M., Moreno, P., Gatto, L., Weber, J., Bai, M., Jimenez, R. C., Sachsenberg, T., Pfeuffer, J., Vera Alvarez, R., Griss, J., Nesvizhskii, A. I., & Perez-Riverol, Y. (2017). BioContainers: an open-source and community-driven framework for software standardization. Bioinformatics, 33(16), 2580–2582. doi: <a href="https://doi.org/10.1093/bioinformatics/btx192">10.1093/bioinformatics/btx192</a></li>
+    ${tool_bibliography}
+  </ul>
+  <div class="alert alert-info">
+    <h5>Notes:</h5>
+    <ul>
+      ${nodoi_text}
+      ${database_note}
+      <li>The software versions are those used in this run (see the report's Software Versions section, or <code>pipeline_info/Protein_blast_and_taxonomy_software_mqc_versions.yml</code>). All the software and data the pipeline can use are listed in <a href="https://github.com/chriswyatt1/Protein_blast_and_taxonomy/blob/main/CITATIONS.md">CITATIONS.md</a>.</li>
+    </ul>
+  </div>

@@ -24,6 +24,8 @@ report_section_order:
     order: 950
   top_hit_genus:
     order: 940
+  Protein_blast_and_taxonomy-methods-description:
+    order: -999
   software_versions:
     order: -1000
 
